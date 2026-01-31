@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Minus, Shuffle, ShoppingCart, Sparkles, Check } from 'lucide-react';
+import { Plus, Minus, Shuffle, ShoppingCart, Check } from 'lucide-react';
 import { ShineButton } from '@/components/ui/shine-button';
 import { GlowCard } from '@/components/ui/glow-card';
 import CheckoutModal from '@/components/CheckoutModal';
@@ -209,8 +209,8 @@ const QuotaSelector = () => {
         <GlowCard className="mb-6">
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-primary" />
-              <h3 className="font-display font-bold text-lg">Resumo do Pedido</h3>
+              
+              <h3 className="font-display font-bold text-lg text-justify">     Resumo do Pedido </h3>
             </div>
             
             <div className="space-y-2 text-sm">
