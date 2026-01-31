@@ -128,18 +128,36 @@ const QuotaSelector = () => {
             </div>
             
             {/* Barra de progresso com porcentagem */}
-            <div className="flex items-center gap-3 mb-3">
-              <div className="flex-1 h-2.5 bg-secondary rounded-full overflow-hidden">
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-2.5 bg-secondary rounded-full overflow-hidden relative">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${soldPercentage}%` }}
                   transition={{ duration: 1, ease: 'easeOut' }}
-                  className="h-full bg-gradient-to-r from-primary to-cyan-400 rounded-full"
-                />
+                  className="h-full bg-gradient-to-r from-primary to-cyan-400 rounded-full relative"
+                >
+                  {/* Shimmer effect */}
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                    animate={{ x: ['-100%', '200%'] }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      repeatDelay: 3,
+                      ease: 'easeInOut'
+                    }}
+                  />
+                </motion.div>
               </div>
-              <span className="text-sm font-bold text-primary min-w-[45px] text-right">
+              <motion.span
+                key={soldPercentage}
+                initial={{ scale: 1.2, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                className="text-sm font-bold text-primary min-w-[45px] text-right"
+              >
                 {soldPercentage}%
-              </span>
+              </motion.span>
             </div>
             
           </div>
