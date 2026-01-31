@@ -7,6 +7,7 @@ import { NavLink } from '@/components/NavLink';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import samvytLogo from '@/assets/samvyt-logo.png';
 const mainNavLinks = [{
   to: '/',
   label: 'Início',
@@ -37,14 +38,13 @@ const Header = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2" onClick={closeMenu}>
-            <motion.span className="text-xl gradient-text font-serif font-semibold" whileHover={{
-            scale: 1.02
-          }} transition={{
-            type: 'spring',
-            stiffness: 400
-          }}>
-              SAMVYT
-            </motion.span>
+            <motion.img 
+              src={samvytLogo} 
+              alt="SamVyt" 
+              className="h-8 w-auto object-contain"
+              whileHover={{ scale: 1.02 }}
+              transition={{ type: 'spring', stiffness: 400 }}
+            />
           </Link>
 
           {/* Desktop Navigation */}
