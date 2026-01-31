@@ -181,8 +181,11 @@ const AuroraBackground = ({ className = '', children }: AuroraBackgroundProps) =
   }
 
   return (
-    <div ref={containerRef} className={cn('relative overflow-hidden', className)}>
-      <div className="relative">
+    <div className={cn('relative overflow-hidden', className)}>
+      {/* WebGL Canvas Container - positioned behind content */}
+      <div ref={containerRef} className="absolute inset-0" />
+      {/* Content Layer */}
+      <div className="relative z-10">
         {children}
       </div>
     </div>

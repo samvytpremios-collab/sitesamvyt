@@ -105,7 +105,19 @@ const ProductSection = () => {
       }} transition={{
         delay: 0.6
       }} className="flex flex-wrap justify-center gap-6 mb-12">
-          {features.map((feature, index) => {})}
+          {features.map((feature, index) => (
+            <motion.div
+              key={index}
+              className="flex items-center gap-2 px-4 py-2 rounded-full glass-card"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.6 + index * 0.1 }}
+            >
+              <feature.icon className="w-5 h-5 text-primary" />
+              <span className="font-heading text-sm text-foreground">{feature.text}</span>
+            </motion.div>
+          ))}
         </motion.div>
 
         {/* CTA Button */}
