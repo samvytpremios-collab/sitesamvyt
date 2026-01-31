@@ -158,76 +158,120 @@ const QuotaSelector = () => {
           </div>
         </motion.div>
 
-        {/* Quantity Counter */}
-        <CyberCard variant="bordered" glowColor="cyan" className="mb-6 p-6">
-          <div className="flex flex-col items-center py-6">
-            <div className="flex items-center justify-center gap-6">
-              {/* Decrement Button */}
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={handleDecrement}
-                disabled={quantity <= MIN_QUOTAS}
-                className="w-14 h-14 rounded-full bg-secondary hover:bg-secondary/80 
-                         flex items-center justify-center transition-colors
-                         disabled:opacity-50 disabled:cursor-not-allowed
-                         border border-border hover:border-primary/50"
-              >
-                <Minus className="w-6 h-6 text-foreground" />
-              </motion.button>
-
-              {/* Quantity Display */}
-              <div className="flex flex-col items-center min-w-[120px]">
-                <AnimatePresence mode="popLayout">
-                  <motion.span
-                    key={quantity}
-                    initial={{ opacity: 0, y: -20, scale: 0.8 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 20, scale: 0.8 }}
-                    className="text-6xl font-display font-black gradient-text tracking-wider"
+        {/* Quantity Counter - Premium Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mb-6"
+        >
+          <div className="relative group">
+            {/* Animated glow border */}
+            <div className="absolute -inset-[1px] bg-gradient-to-r from-primary via-cyan-400 to-primary rounded-2xl opacity-50 group-hover:opacity-75 blur-sm transition-opacity duration-500" />
+            
+            {/* Main card */}
+            <div className="relative bg-card/95 backdrop-blur-xl rounded-2xl border border-primary/20 overflow-hidden">
+              {/* Decorative top accent */}
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent" />
+              
+              {/* Inner glow effect */}
+              <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-primary/5 pointer-events-none" />
+              
+              <div className="relative p-6">
+                {/* Counter Section */}
+                <div className="flex items-center justify-center gap-4 sm:gap-6">
+                  {/* Decrement Button */}
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={handleDecrement}
+                    disabled={quantity <= MIN_QUOTAS}
+                    className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-xl
+                             bg-gradient-to-br from-secondary to-secondary/50
+                             border border-border/50 hover:border-primary/50
+                             flex items-center justify-center transition-all duration-300
+                             disabled:opacity-40 disabled:cursor-not-allowed
+                             hover:shadow-[0_0_20px_hsl(187_100%_50%_/_0.15)]
+                             active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]"
                   >
-                    {quantity}
-                  </motion.span>
-                </AnimatePresence>
-                <span className="text-muted-foreground text-sm uppercase tracking-wider mt-1">
-                  {quantity === 1 ? 'cota' : 'cotas'}
-                </span>
+                    <Minus className="w-5 h-5 sm:w-6 sm:h-6 text-foreground" />
+                  </motion.button>
+
+                  {/* Quantity Display */}
+                  <div className="relative flex flex-col items-center min-w-[100px] sm:min-w-[120px]">
+                    {/* Glow behind number */}
+                    <div className="absolute inset-0 bg-primary/10 blur-2xl rounded-full" />
+                    
+                    <AnimatePresence mode="popLayout">
+                      <motion.span
+                        key={quantity}
+                        initial={{ opacity: 0, y: -30, scale: 0.5, filter: 'blur(10px)' }}
+                        animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+                        exit={{ opacity: 0, y: 30, scale: 0.5, filter: 'blur(10px)' }}
+                        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                        className="relative text-5xl sm:text-6xl font-display font-black gradient-text tracking-wider drop-shadow-[0_0_20px_hsl(187_100%_50%_/_0.5)]"
+                      >
+                        {quantity}
+                      </motion.span>
+                    </AnimatePresence>
+                    
+                    <motion.span 
+                      key={quantity === 1 ? 'cota' : 'cotas'}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-muted-foreground text-xs sm:text-sm uppercase tracking-[0.2em] mt-1 font-medium"
+                    >
+                      {quantity === 1 ? 'cota' : 'cotas'}
+                    </motion.span>
+                  </div>
+
+                  {/* Increment Button */}
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={handleIncrement}
+                    disabled={quantity >= maxAvailable}
+                    className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-xl
+                             bg-gradient-to-br from-primary to-primary/80
+                             border border-primary/50
+                             flex items-center justify-center transition-all duration-300
+                             disabled:opacity-40 disabled:cursor-not-allowed
+                             shadow-[0_0_25px_hsl(187_100%_50%_/_0.4)]
+                             hover:shadow-[0_0_35px_hsl(187_100%_50%_/_0.5)]
+                             active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]"
+                  >
+                    <Plus className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" />
+                  </motion.button>
+                </div>
+
+                {/* Divider with input */}
+                <div className="mt-5 flex items-center gap-3">
+                  <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+                  
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary/30 border border-border/30">
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">ou digite:</span>
+                    <input
+                      type="number"
+                      value={quantity}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || MIN_QUOTAS;
+                        setQuantity(Math.min(Math.max(val, MIN_QUOTAS), maxAvailable));
+                      }}
+                      className="w-16 h-7 text-center text-sm bg-secondary/50 border border-border/50 rounded-md 
+                               text-foreground font-semibold focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30
+                               transition-all duration-200
+                               [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      min={MIN_QUOTAS}
+                      max={maxAvailable}
+                    />
+                  </div>
+                  
+                  <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+                </div>
               </div>
-
-              {/* Increment Button */}
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={handleIncrement}
-                disabled={quantity >= maxAvailable}
-                className="w-14 h-14 rounded-full bg-primary hover:bg-primary/90 
-                         flex items-center justify-center transition-colors
-                         disabled:opacity-50 disabled:cursor-not-allowed
-                         shadow-[0_0_20px_hsl(187_100%_50%_/_0.3)]"
-              >
-                <Plus className="w-6 h-6 text-primary-foreground" />
-              </motion.button>
-            </div>
-
-            {/* Quick input */}
-            <div className="mt-4 flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">ou digite:</span>
-              <input
-                type="number"
-                value={quantity}
-                onChange={(e) => {
-                  const val = parseInt(e.target.value) || MIN_QUOTAS;
-                  setQuantity(Math.min(Math.max(val, MIN_QUOTAS), maxAvailable));
-                }}
-                className="w-20 h-8 text-center bg-secondary border border-border rounded-lg 
-                         text-foreground font-medium focus:outline-none focus:border-primary
-                         [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                min={MIN_QUOTAS}
-                max={maxAvailable}
-              />
             </div>
           </div>
-        </CyberCard>
+        </motion.div>
 
         {/* Quick Add Chips */}
         <motion.div
