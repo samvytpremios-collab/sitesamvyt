@@ -32,7 +32,7 @@ const Login = () => {
     try {
       // Buscar usuário pelo email
       const { data: users, error: userError } = await supabase
-        .table('users')
+        .from('users')
         .select('*')
         .eq('email', email.toLowerCase())
         .limit(1);
