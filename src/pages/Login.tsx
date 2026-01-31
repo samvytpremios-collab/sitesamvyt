@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, Lock, ArrowRight, Eye, EyeOff, Ticket } from 'lucide-react';
 import { ShimmerButton } from '@/components/ui/shimmer-button';
+import { GlowInput } from '@/components/ui/glow-input';
+import { GlassCard } from '@/components/ui/glass-card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -107,24 +109,18 @@ const Login = () => {
         </div>
 
         {/* Form Card */}
-        <div className="bg-card border border-border rounded-2xl p-6 shadow-xl">
+        <GlassCard className="p-6">
           <form onSubmit={handleLogin} className="space-y-4">
             {/* Email Input */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-2">
-                <Mail className="w-4 h-4 text-primary" />
-                Email
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="seu@email.com"
-                className="w-full h-12 px-4 rounded-xl bg-secondary border border-border 
-                         focus:outline-none focus:border-primary transition-colors"
-                disabled={isLoading}
-              />
-            </div>
+            <GlowInput
+              type="email"
+              label="Email"
+              icon={<Mail className="w-4 h-4 text-primary" />}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="seu@email.com"
+              disabled={isLoading}
+            />
 
             {/* Password Input */}
             <div className="space-y-2">
@@ -185,7 +181,7 @@ const Login = () => {
               </button>
             </p>
           </div>
-        </div>
+        </GlassCard>
 
         {/* Help Text */}
         <p className="text-center text-xs text-muted-foreground mt-6">
