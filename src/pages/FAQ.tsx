@@ -1,12 +1,12 @@
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
-import { ArrowLeft, HelpCircle } from 'lucide-react';
+import { HelpCircle } from 'lucide-react';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 const faqs = [
@@ -55,18 +55,7 @@ const faqs = [
 const FAQ = () => {
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="py-6 px-4 border-b border-border">
-        <div className="container mx-auto">
-          <Link 
-            to="/" 
-            className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Voltar
-          </Link>
-        </div>
-      </header>
+      <Header />
 
       {/* Content */}
       <section className="py-16 px-4 relative overflow-hidden">

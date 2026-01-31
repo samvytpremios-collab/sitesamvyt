@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import IntroAnimation from '@/components/IntroAnimation';
+import Header from '@/components/Header';
 import ProductSection from '@/components/ProductSection';
 import QuotaSelector from '@/components/QuotaSelector';
 import TrustBadges from '@/components/TrustBadges';
@@ -36,6 +37,9 @@ const Index = () => {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
         >
+          {/* Global Header */}
+          <Header />
+
           {/* Product Section - iPhone 17 Pro with Aurora Background */}
           <ProductSection />
 

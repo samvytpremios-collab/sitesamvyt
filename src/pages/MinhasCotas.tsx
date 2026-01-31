@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Ticket, Calendar, Trophy, Share2, Copy, Check, Clock, AlertCircle } from 'lucide-react';
+import { Ticket, Calendar, Trophy, Share2, Check, Clock, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 interface QuotaData {
@@ -208,17 +209,7 @@ const MinhasCotas = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-background">
-        <header className="py-6 px-4 border-b border-border">
-          <div className="container mx-auto">
-            <Link 
-              to="/" 
-              className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Voltar para o início
-            </Link>
-          </div>
-        </header>
+        <Header />
         
         <div className="flex items-center justify-center min-h-[60vh] px-4">
           <div className="text-center max-w-md">
@@ -241,17 +232,11 @@ const MinhasCotas = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="py-6 px-4 border-b border-border">
-        <div className="container mx-auto flex items-center justify-between">
-          <Link 
-            to="/" 
-            className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Voltar
-          </Link>
-          
+      <Header />
+      
+      {/* Share button bar */}
+      <div className="border-b border-border/50 py-3 px-4">
+        <div className="container mx-auto flex justify-end">
           <button
             onClick={handleShare}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-secondary hover:bg-secondary/80 transition-colors"
@@ -269,7 +254,7 @@ const MinhasCotas = () => {
             )}
           </button>
         </div>
-      </header>
+      </div>
 
       {/* Content */}
       <section className="py-12 px-4 relative overflow-hidden">
