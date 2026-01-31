@@ -1,15 +1,18 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, Mail, Phone, ArrowRight, ArrowLeft, Shield, Award, Clock, Copy, Check, QrCode } from 'lucide-react';
+import { X, User, Mail, Phone, ArrowRight, ArrowLeft, Shield, Award, Clock, Copy, Check, QrCode, Ticket } from 'lucide-react';
 import { ShineButton } from '@/components/ui/shine-button';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
+import QuotaTicket from '@/components/QuotaTicket';
 
 interface CheckoutModalProps {
   isOpen: boolean;
   onClose: () => void;
   quantity: number;
   totalPrice: number;
+  selectedNumbers?: string[];
+  raffleId?: string;
 }
 
 const customerSchema = z.object({
@@ -22,7 +25,7 @@ type CustomerData = z.infer<typeof customerSchema>;
 
 type Step = 'dados' | 'resumo' | 'pagamento';
 
-const CheckoutModal = ({ isOpen, onClose, quantity, totalPrice }: CheckoutModalProps) => {
+const CheckoutModal = ({ isOpen, onClose, quantity, totalPrice, selectedNumbers = [], raffleId }: CheckoutModalProps) => {
   const { toast } = useToast();
   const [step, setStep] = useState<Step>('dados');
   const [isLoading, setIsLoading] = useState(false);
@@ -267,6 +270,11 @@ const CheckoutModal = ({ isOpen, onClose, quantity, totalPrice }: CheckoutModalP
                   exit={{ opacity: 0, x: -20 }}
                   className="space-y-4"
                 >
+                  {/* Selected Numbers */}
+                  {selectedNumbers.length > 0 && (
+                    <QuotaTicket numbers={selectedNumbers} className="mb-2" />
+                  )}
+
                   {/* Order Details */}
                   <div className="p-4 rounded-xl bg-secondary/50 border border-border space-y-3">
                     <div className="flex justify-between">
@@ -275,7 +283,7 @@ const CheckoutModal = ({ isOpen, onClose, quantity, totalPrice }: CheckoutModalP
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Valor unitário</span>
-                      <span className="font-medium">{formatCurrency(1)}</span>
+                      <span className="font-medium">{formatCurrency(totalPrice / quantity)}</span>
                     </div>
                     <div className="h-px bg-border" />
                     <div className="flex justify-between">
