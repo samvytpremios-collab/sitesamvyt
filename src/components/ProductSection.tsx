@@ -14,7 +14,7 @@ const ProductSection = () => {
     icon: Shield,
     text: 'Garantia Apple'
   }];
-  return <AuroraBackground className="min-h-screen w-full isolate">
+  return <AuroraBackground className="min-h-screen w-full">
       <div className="container mx-auto px-4 py-20 flex flex-col items-center justify-center min-h-screen">
         <motion.div initial={{
         opacity: 0,
@@ -27,7 +27,7 @@ const ProductSection = () => {
       }} transition={{
         duration: 0.8
       }} className="text-center mb-12">
-          <motion.span className="inline-block px-4 py-2 rounded-full glass-card font-heading font-semibold text-sm mb-6 text-primary uppercase tracking-widest" initial={{
+          <motion.span className="inline-block px-4 py-2 rounded-full glass-card font-display text-sm mb-6 text-[#b1c8d2]" initial={{
           scale: 0
         }} whileInView={{
           scale: 1
@@ -40,11 +40,11 @@ const ProductSection = () => {
              PRÊMIO EXCLUSIVO
           </motion.span>
           
-          <h2 className="text-4xl md:text-6xl lg:text-7xl font-display font-bold mb-4 tracking-tight">
-            <span className="gradient-text">iPhone 17 Pro</span>
+          <h2 className="text-4xl md:text-6xl lg:text-7xl font-display font-bold mb-4">
+            <span className="gradient-text text-neutral-400 bg-zinc-500">iPhone 17 Pro</span>
           </h2>
           
-          <p className="text-xl md:text-2xl max-w-2xl mx-auto text-muted-foreground font-body">
+          <p className="text-xl md:text-2xl max-w-2xl mx-auto text-secondary-foreground">
             O smartphone mais avançado da Apple pode ser seu por apenas
           </p>
         </motion.div>
@@ -105,20 +105,7 @@ const ProductSection = () => {
       }} transition={{
         delay: 0.6
       }} className="flex flex-wrap justify-center gap-6 mb-12">
-          {features.map((feature, index) => <motion.div key={feature.text} initial={{
-          opacity: 0,
-          x: -20
-        }} whileInView={{
-          opacity: 1,
-          x: 0
-        }} viewport={{
-          once: true
-        }} transition={{
-          delay: 0.7 + index * 0.1
-        }} className="flex items-center gap-3 glass-card rounded-full px-6 py-3">
-              <feature.icon className="w-5 h-5 text-primary" />
-              <span className="font-heading font-semibold text-foreground tracking-wide">{feature.text}</span>
-            </motion.div>)}
+          {features.map((feature, index) => {})}
         </motion.div>
 
         {/* CTA Button */}
