@@ -88,9 +88,7 @@ const Login = () => {
     }} className="w-full max-w-md">
         {/* Logo/Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-            
-          </div>
+          
           <h1 className="text-3xl font-display font-bold gradient-text mb-2">
             Acessar Minhas Cotas
           </h1>
