@@ -105,7 +105,7 @@ const QuotaSelector = () => {
           viewport={{ once: true }}
           className="text-center mb-6"
         >
-          <h2 className="text-3xl md:text-4xl font-display font-bold gradient-text mb-2">
+          <h2 className="text-3xl md:text-4xl font-display font-bold gradient-text mb-2 tracking-wide">
             Selecione suas Cotas
           </h2>
           <p className="text-muted-foreground text-lg">
@@ -184,7 +184,7 @@ const QuotaSelector = () => {
                     initial={{ opacity: 0, y: -20, scale: 0.8 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 20, scale: 0.8 }}
-                    className="text-6xl font-display font-bold gradient-text"
+                    className="text-6xl font-display font-black gradient-text tracking-wider"
                   >
                     {quantity}
                   </motion.span>
@@ -310,7 +310,7 @@ const QuotaSelector = () => {
         <GlowCard className="mb-6">
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <h3 className="font-display font-bold text-lg text-justify">Resumo do Pedido</h3>
+              <h3 className="font-heading font-bold text-lg tracking-wide">Resumo do Pedido</h3>
             </div>
 
             <div className="space-y-2 text-sm">

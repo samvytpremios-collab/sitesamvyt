@@ -37,7 +37,7 @@ const QuotaTicket = ({ numbers, isLoading, className }: QuotaTicketProps) => {
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Ticket className="w-5 h-5 text-primary" />
-          <span className="font-display font-bold text-sm uppercase tracking-wider">
+          <span className="font-heading font-bold text-sm uppercase tracking-widest">
             Seus Números
           </span>
         </div>
@@ -69,10 +69,10 @@ const QuotaTicket = ({ numbers, isLoading, className }: QuotaTicketProps) => {
             >
               <div
                 className="px-3 py-2 rounded-lg bg-secondary/80 border border-border
-                         font-mono font-bold text-sm text-foreground
+                         font-display font-bold text-sm text-foreground
                          group-hover:border-primary/50 group-hover:bg-primary/10
                          transition-colors duration-200
-                         shadow-sm"
+                         shadow-sm tracking-wider"
               >
                 {number}
               </div>

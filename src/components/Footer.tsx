@@ -18,10 +18,10 @@ const Footer = () => {
         >
           {/* Logo e descrição */}
           <div className="text-center">
-            <h3 className="text-2xl font-display font-bold gradient-text mb-2">
+            <h3 className="text-2xl font-display font-bold gradient-text mb-2 tracking-wide">
               SamVyt Prêmios
             </h3>
-            <p className="text-muted-foreground text-sm max-w-md mx-auto">
+            <p className="text-muted-foreground text-sm max-w-md mx-auto font-body">
               Sorteios transparentes e seguros. Participe e concorra a prêmios incríveis 
               com resultados baseados na Loteria Federal.
             </p>

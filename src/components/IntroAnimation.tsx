@@ -120,15 +120,15 @@ const IntroAnimation = ({ onComplete }: IntroAnimationProps) => {
                   className="text-center mt-8"
                 >
                   <motion.h1
-                    className="text-4xl md:text-6xl font-display font-bold gradient-text"
+                    className="text-4xl md:text-6xl font-display font-black gradient-text tracking-wider"
                     initial={{ letterSpacing: '0.5em', opacity: 0 }}
-                    animate={{ letterSpacing: '0.05em', opacity: 1 }}
+                    animate={{ letterSpacing: '0.1em', opacity: 1 }}
                     transition={{ duration: 0.8 }}
                   >
                     SAMVYT
                   </motion.h1>
                   <motion.p
-                    className="text-xl md:text-2xl text-primary mt-2 font-display text-glow"
+                    className="text-xl md:text-2xl text-primary mt-2 font-heading font-bold text-glow tracking-widest uppercase"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.3 }}
