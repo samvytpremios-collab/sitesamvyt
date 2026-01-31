@@ -9,8 +9,8 @@ export interface SolidButtonProps extends ButtonHTMLAttributes<HTMLButtonElement
 export const SolidButton = forwardRef<HTMLButtonElement, SolidButtonProps>(
   ({ className, variant = 'primary', size = 'md', children, ...props }, ref) => {
     const variants = {
-      primary: 'bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/30',
-      secondary: 'bg-white hover:bg-gray-50 text-gray-900 border border-gray-200',
+      primary: 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/30',
+      secondary: 'bg-secondary hover:bg-secondary/80 text-foreground border border-border hover:border-primary/50',
       success: 'bg-green-500 hover:bg-green-600 text-white shadow-lg shadow-green-500/30',
     };
 
