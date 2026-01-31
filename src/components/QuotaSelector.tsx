@@ -122,26 +122,41 @@ const QuotaSelector = () => {
           className="mb-6"
         >
           <div className="p-4 rounded-xl bg-secondary/50 border border-border">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-primary" />
-                <span className="text-sm font-medium">Cotas disponíveis</span>
+            <div className="flex items-center gap-2 mb-3">
+              <TrendingUp className="w-4 h-4 text-primary" />
+              <span className="text-sm font-medium">Progresso de Vendas</span>
+            </div>
+            
+            {/* Barra de progresso com porcentagem */}
+            <div className="flex items-center gap-3 mb-3">
+              <div className="flex-1 h-2.5 bg-secondary rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${soldPercentage}%` }}
+                  transition={{ duration: 1, ease: 'easeOut' }}
+                  className="h-full bg-gradient-to-r from-primary to-cyan-400 rounded-full"
+                />
               </div>
-              <span className="text-sm text-muted-foreground">
-                {formatNumber(stats.available)} de {formatNumber(stats.total)}
+              <span className="text-sm font-bold text-primary min-w-[45px] text-right">
+                {soldPercentage}%
               </span>
             </div>
-            <div className="h-2 bg-secondary rounded-full overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${soldPercentage}%` }}
-                transition={{ duration: 1, ease: 'easeOut' }}
-                className="h-full bg-gradient-to-r from-primary to-cyan-400 rounded-full"
-              />
+            
+            {/* Estatísticas: vendidas e disponíveis */}
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-1.5">
+                <Check className="w-3.5 h-3.5 text-green-500" />
+                <span className="text-muted-foreground">
+                  <span className="font-semibold text-foreground">{formatNumber(stats.sold + stats.reserved)}</span> vendidas
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3.5 h-3.5 rounded-full border-2 border-primary/50" />
+                <span className="text-muted-foreground">
+                  <span className="font-semibold text-foreground">{formatNumber(stats.available)}</span> disponíveis
+                </span>
+              </div>
             </div>
-            <p className="mt-2 text-xs text-muted-foreground text-center">
-              {soldPercentage}% das cotas já foram vendidas
-            </p>
           </div>
         </motion.div>
 
