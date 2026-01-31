@@ -2,7 +2,6 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Shield, Award, Heart } from 'lucide-react';
 import samvytMascots from '@/assets/samvyt-mascots-logo.png';
-
 const Footer = () => {
   const currentYear = new Date().getFullYear();
   return <footer className="py-12 px-4 border-t border-border relative overflow-hidden">
@@ -18,11 +17,7 @@ const Footer = () => {
       }} className="space-y-8">
           {/* Logo com mascotes */}
           <div className="text-center">
-            <img 
-              src={samvytMascots} 
-              alt="SamVyt Mascotes" 
-              className="h-20 w-auto mx-auto mb-2"
-            />
+            <img src={samvytMascots} alt="SamVyt Mascotes" className="h-20 w-auto mx-auto mb-2" />
             <p className="text-muted-foreground text-sm max-w-md mx-auto">
               Sorteios transparentes e seguros. Participe e concorra a prêmios incríveis 
               com resultados baseados na Loteria Federal.
@@ -59,9 +54,7 @@ const Footer = () => {
             <p className="text-muted-foreground/70 text-xs">
               © {currentYear} SamVyt Prêmios. Todos os direitos reservados.
             </p>
-            <p className="text-muted-foreground/50 text-xs flex items-center justify-center gap-1">
-              Feito com <Heart className="w-3 h-3 text-red-500" /> no Brasil
-            </p>
+            
           </div>
         </motion.div>
       </div>
