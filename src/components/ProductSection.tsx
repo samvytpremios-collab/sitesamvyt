@@ -27,7 +27,7 @@ const ProductSection = () => {
       }} transition={{
         duration: 0.8
       }} className="text-center mb-12">
-          <motion.span className="inline-block px-4 py-2 rounded-full glass-card text-primary font-display text-sm mb-6" initial={{
+          <motion.span className="inline-block px-4 py-2 rounded-full glass-card font-display text-sm mb-6 text-[#b1c8d2]" initial={{
           scale: 0
         }} whileInView={{
           scale: 1
@@ -41,10 +41,10 @@ const ProductSection = () => {
           </motion.span>
           
           <h2 className="text-4xl md:text-6xl lg:text-7xl font-display font-bold mb-4">
-            <span className="gradient-text">iPhone 17 Pro</span>
+            <span className="gradient-text text-neutral-400 bg-zinc-500">iPhone 17 Pro</span>
           </h2>
           
-          <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-xl md:text-2xl max-w-2xl mx-auto text-secondary-foreground">
             O smartphone mais avançado da Apple pode ser seu por apenas
           </p>
         </motion.div>
