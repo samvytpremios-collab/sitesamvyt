@@ -54,6 +54,13 @@
     --shadow-cyan-lg: 0 0 60px hsl(187 100% 50% / 0.4);
     --shadow-glow: 0 4px 30px hsl(187 100% 50% / 0.2);
 
+    /* Rainbow Colors */
+    --color-1: 187 100% 50%; /* Cyan */
+    --color-2: 220 100% 60%; /* Blue */
+    --color-3: 280 100% 60%; /* Purple */
+    --color-4: 330 100% 60%; /* Pink */
+    --color-5: 170 100% 50%; /* Teal */
+
     --sidebar-background: 210 50% 5%;
     --sidebar-foreground: 200 20% 95%;
     --sidebar-primary: 187 100% 50%;

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Minus, Shuffle, ShoppingCart, Check, TrendingUp, Loader2 } from 'lucide-react';
-import { ShineButton } from '@/components/ui/shine-button';
+import { RainbowButton } from '@/components/ui/rainbow-button';
 import { GlowCard } from '@/components/ui/glow-card';
 import CheckoutModal from '@/components/CheckoutModal';
 import QuotaTicket from '@/components/QuotaTicket';
@@ -345,15 +345,16 @@ const QuotaSelector = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
         >
-          <ShineButton
-            size="xl"
+          <RainbowButton
             onClick={() => setIsCheckoutOpen(true)}
-            className="w-full"
-            icon={<ShoppingCart className="w-5 h-5" />}
+            className="w-full h-14 text-lg font-bold"
             disabled={stats.available === 0}
           >
-            {selectedNumbers.length > 0 ? 'Comprar estas Cotas' : 'Finalizar Compra'}
-          </ShineButton>
+            <span className="flex items-center gap-3">
+              <ShoppingCart className="w-5 h-5" />
+              {selectedNumbers.length > 0 ? 'Comprar estas Cotas' : 'Finalizar Compra'}
+            </span>
+          </RainbowButton>
         </motion.div>
 
         {/* Trust Indicators */}

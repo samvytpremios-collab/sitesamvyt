@@ -119,6 +119,21 @@ export default {
           "0%": { backgroundPosition: "-200% 0" },
           "100%": { backgroundPosition: "200% 0" },
         },
+        rainbow: {
+          "0%": { backgroundPosition: "0% 50%" },
+          "50%": { backgroundPosition: "100% 50%" },
+          "100%": { backgroundPosition: "0% 50%" },
+        },
+        "shimmer-slide": {
+          "0%": { transform: "translate(0, 0)" },
+          "100%": { transform: "translate(calc(100cqw - 100%), calc(100cqh - 100%))" },
+        },
+        "spin-around": {
+          "0%": { transform: "translateZ(0) rotate(0)" },
+          "15%, 35%": { transform: "translateZ(0) rotate(90deg)" },
+          "65%, 85%": { transform: "translateZ(0) rotate(270deg)" },
+          "100%": { transform: "translateZ(0) rotate(360deg)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -130,6 +145,9 @@ export default {
         "glow-pulse": "glow-pulse 2s ease-in-out infinite",
         float: "float 3s ease-in-out infinite",
         shimmer: "shimmer 2s infinite",
+        rainbow: "rainbow 3s ease-in-out infinite",
+        "shimmer-slide": "shimmer-slide var(--speed) ease-in-out infinite alternate",
+        "spin-around": "spin-around calc(var(--speed) * 2) infinite linear",
       },
     },
   },

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, Lock, ArrowRight, Eye, EyeOff, Ticket } from 'lucide-react';
-import { ShineButton } from '@/components/ui/shine-button';
+import { ShimmerButton } from '@/components/ui/shimmer-button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -161,15 +161,16 @@ const Login = () => {
             </div>
 
             {/* Submit Button */}
-            <ShineButton
+            <ShimmerButton
               type="submit"
-              size="lg"
-              loading={isLoading}
-              className="w-full mt-6"
-              icon={<ArrowRight className="w-5 h-5" />}
+              disabled={isLoading}
+              className="w-full h-14 mt-6 text-lg font-bold"
             >
-              Acessar Minhas Cotas
-            </ShineButton>
+              <span className="flex items-center gap-3">
+                {isLoading ? 'Entrando...' : 'Acessar Minhas Cotas'}
+                {!isLoading && <ArrowRight className="w-5 h-5" />}
+              </span>
+            </ShimmerButton>
           </form>
 
           {/* Footer */}
