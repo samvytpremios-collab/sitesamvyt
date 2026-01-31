@@ -2,9 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, Lock, ArrowRight, Eye, EyeOff, Ticket } from 'lucide-react';
-import { ShimmerButton } from '@/components/ui/shimmer-button';
-import { GlowInput } from '@/components/ui/glow-input';
-import { GlassCard } from '@/components/ui/glass-card';
+import { SolidButton } from '@/components/ui/solid-button';
+import { SimpleCard } from '@/components/ui/simple-card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -109,18 +108,24 @@ const Login = () => {
         </div>
 
         {/* Form Card */}
-        <GlassCard className="p-6">
+        <SimpleCard className="p-6">
           <form onSubmit={handleLogin} className="space-y-4">
             {/* Email Input */}
-            <GlowInput
-              type="email"
-              label="Email"
-              icon={<Mail className="w-4 h-4 text-primary" />}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="seu@email.com"
-              disabled={isLoading}
-            />
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Mail className="w-4 h-4 text-primary" />
+                Email
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="seu@email.com"
+                className="w-full h-12 px-4 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800
+                         focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                disabled={isLoading}
+              />
+            </div>
 
             {/* Password Input */}
             <div className="space-y-2">
@@ -157,16 +162,15 @@ const Login = () => {
             </div>
 
             {/* Submit Button */}
-            <ShimmerButton
+            <SolidButton
               type="submit"
               disabled={isLoading}
-              className="w-full h-14 mt-6 text-lg font-bold"
+              className="w-full mt-6"
+              size="lg"
             >
-              <span className="flex items-center gap-3">
-                {isLoading ? 'Entrando...' : 'Acessar Minhas Cotas'}
-                {!isLoading && <ArrowRight className="w-5 h-5" />}
-              </span>
-            </ShimmerButton>
+              {isLoading ? 'Entrando...' : 'Acessar Minhas Cotas'}
+              {!isLoading && <ArrowRight className="w-5 h-5" />}
+            </SolidButton>
           </form>
 
           {/* Footer */}
@@ -181,7 +185,7 @@ const Login = () => {
               </button>
             </p>
           </div>
-        </GlassCard>
+        </SimpleCard>
 
         {/* Help Text */}
         <p className="text-center text-xs text-muted-foreground mt-6">

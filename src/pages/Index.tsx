@@ -6,7 +6,7 @@ import ProductSection from '@/components/ProductSection';
 import QuotaSelector from '@/components/QuotaSelector';
 import TrustBadges from '@/components/TrustBadges';
 import Footer from '@/components/Footer';
-import { DotGridBackground } from '@/components/ui/dot-grid-background';
+
 
 const Index = () => {
   const [showIntro, setShowIntro] = useState(true);
@@ -25,9 +25,7 @@ const Index = () => {
   }
 
   return (
-    <div className="bg-background min-h-screen relative">
-      {/* Animated Dot Grid Background */}
-      <DotGridBackground />
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
       <AnimatePresence>
         {showIntro && (
           <IntroAnimation onComplete={() => setShowIntro(false)} />

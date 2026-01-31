@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Minus, Shuffle, ShoppingCart, Check, TrendingUp, Loader2 } from 'lucide-react';
-import { RainbowButton } from '@/components/ui/rainbow-button';
-import { GlassCard } from '@/components/ui/glass-card';
-import { BorderBeam } from '@/components/ui/border-beam';
+import { SolidButton } from '@/components/ui/solid-button';
+import { SimpleCard } from '@/components/ui/simple-card';
 import CheckoutModal from '@/components/CheckoutModal';
 import QuotaTicket from '@/components/QuotaTicket';
 import { useRaffleData } from '@/hooks/useRaffleData';
@@ -160,8 +159,7 @@ const QuotaSelector = () => {
         </motion.div>
 
         {/* Quantity Counter */}
-        <BorderBeam className="mb-6">
-          <GlassCard className="p-0">
+        <SimpleCard className="mb-6 p-6">
           <div className="flex flex-col items-center py-6">
             <div className="flex items-center justify-center gap-6">
               {/* Decrement Button */}
@@ -229,8 +227,7 @@ const QuotaSelector = () => {
               />
             </div>
           </div>
-          </GlassCard>
-        </BorderBeam>
+        </SimpleCard>
 
         {/* Quick Add Chips */}
         <motion.div
@@ -310,7 +307,7 @@ const QuotaSelector = () => {
         </AnimatePresence>
 
         {/* Order Summary */}
-        <GlassCard className="mb-6 p-6">
+        <SimpleCard className="mb-6 p-6">
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <h3 className="font-heading font-bold text-lg tracking-wide">Resumo do Pedido</h3>
@@ -340,7 +337,7 @@ const QuotaSelector = () => {
               </div>
             </div>
           </div>
-        </GlassCard>
+        </SimpleCard>
 
         {/* CTA Button */}
         <motion.div
@@ -348,16 +345,16 @@ const QuotaSelector = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
         >
-          <RainbowButton
+          <SolidButton
             onClick={() => setIsCheckoutOpen(true)}
-            className="w-full h-14 text-lg font-bold"
+            className="w-full"
+            size="lg"
+            variant="primary"
             disabled={stats.available === 0}
           >
-            <span className="flex items-center gap-3">
-              <ShoppingCart className="w-5 h-5" />
-              {selectedNumbers.length > 0 ? 'Comprar estas Cotas' : 'Finalizar Compra'}
-            </span>
-          </RainbowButton>
+            <ShoppingCart className="w-5 h-5" />
+            {selectedNumbers.length > 0 ? 'Comprar estas Cotas' : 'Finalizar Compra'}
+          </SolidButton>
         </motion.div>
 
         {/* Trust Indicators */}
