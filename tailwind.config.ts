@@ -14,8 +14,9 @@ export default {
     },
     extend: {
       fontFamily: {
+        sans: ["Space Grotesk", "sans-serif"],
         display: ["Orbitron", "sans-serif"],
-        heading: ["Rajdhani", "sans-serif"],
+        heading: ["Space Grotesk", "sans-serif"],
         body: ["Inter", "sans-serif"],
       },
       colors: {
