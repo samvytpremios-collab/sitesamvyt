@@ -27,7 +27,7 @@ const CSSFallback = ({ className, children }: AuroraBackgroundProps) => (
         100% { transform: translate(-5%, -5%) scale(1); opacity: 0.3; }
       }
     `}</style>
-    <div className="absolute inset-0 z-10">
+    <div className="relative">
       {children}
     </div>
   </div>
@@ -181,8 +181,8 @@ const AuroraBackground = ({ className = '', children }: AuroraBackgroundProps) =
   }
 
   return (
-    <div ref={containerRef} className={cn('relative', className)}>
-      <div className="absolute inset-0 z-10">
+    <div ref={containerRef} className={cn('relative overflow-hidden', className)}>
+      <div className="relative">
         {children}
       </div>
     </div>
