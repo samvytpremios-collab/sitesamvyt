@@ -1,181 +1,178 @@
 
-# Plano: Atualização Visual Completa
+# Plano: Cards Futuristas e Remoção de Fundos Brancos
 
-## Visão Geral
+## Problema Identificado
 
-Este plano inclui correção de erros de build, novos componentes visuais (fundo animado procedural, bento grid cards, botões animados) e aplicação do tema escuro em todo o site.
+O `SimpleCard` e outros componentes ainda usam `bg-white` que conflita com o tema escuro/futurista do site. Os cards são muito genéricos e não combinam com a estética neon/cyberpunk do projeto.
+
+### Componentes com fundo branco encontrados:
+- `src/components/ui/simple-card.tsx` - linha 20: `bg-white dark:bg-gray-900`
+- `src/components/ui/solid-button.tsx` - linha 13: variant secondary usa `bg-white`
+- `src/pages/Login.tsx` - linha 124: input com `bg-white`
 
 ---
 
-## 1. Correção de Erros de Build
+## Solução
 
-### Arquivos Afetados
-- `src/pages/Login.tsx`
-- `src/pages/MinhasCotas.tsx`
+### 1. Criar Novo Componente: CyberCard
 
-### Problema
-O código está usando `.table()` que não existe no cliente Supabase. O método correto é `.from()`.
+Substituir o SimpleCard por um card futurista com:
+- Fundo escuro translúcido (glass morphism)
+- Borda com gradiente animado neon
+- Efeito de spotlight no hover (segue o mouse)
+- Glow sutil cyan/purple
+- Linhas de "circuito" decorativas opcionais
 
-### Correções
+### 2. Atualizar SimpleCard
 
-**Login.tsx (linha 35)**
-```typescript
+Remover completamente o `bg-white` e usar cores do tema escuro:
+
+```tsx
 // DE:
-const { data: users, error: userError } = await supabase.table('users')
+'bg-white dark:bg-gray-900',
+'border border-gray-200 dark:border-gray-800',
 
 // PARA:
-const { data: users, error: userError } = await supabase.from('users')
+'bg-card/80 backdrop-blur-xl',
+'border border-border/50',
+'shadow-[0_0_30px_rgba(0,217,255,0.05)]',
 ```
 
-**MinhasCotas.tsx (linhas 61, 72, 83)**
-```typescript
+### 3. Atualizar SolidButton
+
+Remover variant secondary com fundo branco:
+
+```tsx
 // DE:
-supabase.table('transactions')
-supabase.table('quotas')
-supabase.table('raffle_configs')
+secondary: 'bg-white hover:bg-gray-50 text-gray-900 border border-gray-200',
 
 // PARA:
-supabase.from('transactions')
-supabase.from('quotas')
-supabase.from('raffle_configs')
+secondary: 'bg-secondary hover:bg-secondary/80 text-foreground border border-border',
 ```
 
----
+### 4. Atualizar Login.tsx
 
-## 2. Novo Componente: Fundo Animado Procedural
+Inputs sem fundo branco:
 
-### Arquivo
-`src/components/ui/procedural-ground-background.tsx`
+```tsx
+// DE:
+className="... bg-white dark:bg-gray-900 ..."
 
-### Descrição
-Fundo WebGL com linhas topográficas neon e movimento de ondulação. Usa shaders para performance otimizada.
-
-### Características
-- Canvas WebGL fullscreen
-- Efeito de perspectiva de terreno
-- Linhas neon topográficas (roxo/azul elétrico)
-- Animação fluida de ondulação
-- Fallback para CSS se WebGL não disponível
-- Performance otimizada
-
-### Paleta de Cores do Shader
-```glsl
-baseColor = vec3(0.04, 0.03, 0.12);  // Deep Space
-accentColor = vec3(0.1, 0.3, 0.8);   // Electric Blue
-neonColor = vec3(0.6, 0.2, 1.0);      // Neon Purple
+// PARA:
+className="... bg-secondary border-border ..."
 ```
 
----
+### 5. Criar CyberCard Component
 
-## 3. Novo Componente: Bento Grid Cards
+Novo componente com visual futurista:
 
-### Arquivo
-`src/components/ui/bento-grid.tsx`
+```tsx
+// src/components/ui/cyber-card.tsx
+interface CyberCardProps {
+  children: ReactNode;
+  className?: string;
+  glowColor?: 'cyan' | 'purple' | 'mixed';
+  variant?: 'default' | 'bordered' | 'spotlight';
+}
+```
 
-### Descrição
-Grid de cards estilo Bento com design moderno, tags, ícones e efeitos de hover.
-
-### Características
-- Layout responsivo (1 coluna mobile, 3 colunas desktop)
-- Suporte a col-span para cards maiores
-- Efeito de hover com elevação e gradiente
-- Tags clicáveis
-- Status badges
-- Ícones personalizáveis
-
----
-
-## 4. Novo Componente: Status Cycle Button
-
-### Arquivo
-`src/components/ui/status-cycle-button.tsx`
-
-### Descrição
-Botão que cicla automaticamente entre diferentes textos/estados com animação de blur.
-
-### Características
-- Animação de transição com blur
-- Ciclo automático configurável
-- Suporte a variantes do shadcn Button
-- Usa framer-motion para animações
+**Características:**
+- Gradiente de borda animado (conic-gradient rotativo)
+- Background com glass effect escuro
+- Efeito spotlight que segue o cursor
+- Cantos com "clips" estilo cyberpunk
+- Inner glow sutil
 
 ---
 
-## 5. Aplicação do Fundo Animado em Todo o Site
+## Arquivos Afetados
 
-### Arquivos Afetados
-- `src/pages/Index.tsx` - Wrapper principal
-- `src/components/ProductSection.tsx` - Substituir AuroraBackground
-- `src/components/QuotaSelector.tsx` - Adicionar fundo
-
-### Estratégia
-Criar um wrapper global que aplica o fundo procedural em todas as seções, garantindo que o efeito seja contínuo ao scrollar.
+| Arquivo | Ação |
+|---------|------|
+| `src/components/ui/simple-card.tsx` | Atualizar para tema escuro |
+| `src/components/ui/solid-button.tsx` | Remover bg-white do secondary |
+| `src/components/ui/cyber-card.tsx` | Criar novo componente |
+| `src/pages/Login.tsx` | Atualizar inputs |
+| `src/components/QuotaSelector.tsx` | Usar CyberCard em vez de SimpleCard |
 
 ---
 
-## 6. Estrutura de Arquivos
+## Design do CyberCard
 
 ```text
-src/
-├── components/
-│   ├── ui/
-│   │   ├── procedural-ground-background.tsx  (NOVO)
-│   │   ├── bento-grid.tsx                    (NOVO)
-│   │   └── status-cycle-button.tsx           (NOVO)
-│   ├── ProceduralBackground.tsx              (NOVO - wrapper)
-│   └── ...
-├── pages/
-│   ├── Index.tsx                             (ATUALIZAR)
-│   ├── Login.tsx                             (CORRIGIR)
-│   └── MinhasCotas.tsx                       (CORRIGIR)
++--[ CYBER CARD ]------------------+
+|                                   |
+|   ╔═══════════════════════════╗   |  <- Borda neon animada
+|   ║                           ║   |
+|   ║      Conteúdo             ║   |  <- Glass background
+|   ║                           ║   |
+|   ╚═══════════════════════════╝   |
+|          ~~~~~~~~                 |  <- Spotlight effect (hover)
++-----------------------------------+
 ```
+
+**Paleta de cores:**
+- Background: `hsl(210 45% 8% / 0.8)` (card escuro translúcido)
+- Borda: Gradiente `cyan -> purple -> cyan` animado
+- Glow: `rgba(0, 217, 255, 0.1)` a `rgba(138, 43, 226, 0.1)`
 
 ---
 
 ## Detalhes Técnicos
 
-### ProceduralGroundBackground Component
-
-```typescript
-// Inicialização WebGL
-const gl = canvas.getContext('webgl');
-
-// Vertex Shader - Tela cheia
-attribute vec2 position;
-void main() { gl_Position = vec4(position, 0.0, 1.0); }
-
-// Fragment Shader - Efeito principal
-- Simulação de perspectiva de terreno
-- Ruído procedural em camadas
-- Linhas topográficas neon
-- Fade de horizonte
-
-// Loop de animação
-requestAnimationFrame(render);
-- Atualiza u_time para animação
-- Redimensiona canvas com window
-```
-
-### Integração no Index.tsx
+### CyberCard - Estrutura
 
 ```tsx
-<ProceduralBackground className="fixed inset-0 -z-10" />
-<main className="relative z-10">
-  <Header />
-  <ProductSection />
-  <QuotaSelector />
-  <TrustBadges />
-  <Footer />
-</main>
+<div className="relative group">
+  {/* Animated border */}
+  <div className="absolute -inset-[1px] rounded-2xl bg-gradient-conic animate-spin-slow opacity-50" />
+  
+  {/* Inner background */}
+  <div className="relative rounded-2xl bg-card/80 backdrop-blur-xl border border-border/30 p-6">
+    
+    {/* Corner accents */}
+    <div className="absolute top-0 left-0 w-4 h-4 border-l-2 border-t-2 border-primary/50" />
+    <div className="absolute top-0 right-0 w-4 h-4 border-r-2 border-t-2 border-primary/50" />
+    <div className="absolute bottom-0 left-0 w-4 h-4 border-l-2 border-b-2 border-primary/50" />
+    <div className="absolute bottom-0 right-0 w-4 h-4 border-r-2 border-b-2 border-primary/50" />
+    
+    {/* Spotlight effect */}
+    <div 
+      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity"
+      style={{
+        background: `radial-gradient(600px at ${mouseX}px ${mouseY}px, rgba(0,217,255,0.1), transparent)`
+      }}
+    />
+    
+    {/* Content */}
+    {children}
+  </div>
+</div>
+```
+
+### Aplicação no QuotaSelector
+
+Substituir os dois usos de `SimpleCard`:
+
+```tsx
+// Linha 161 - Contador de quantidade
+<CyberCard variant="bordered" className="mb-6 p-6">
+  {/* conteúdo do contador */}
+</CyberCard>
+
+// Linha 309 - Resumo do pedido  
+<CyberCard variant="spotlight" className="mb-6 p-6">
+  {/* conteúdo do resumo */}
+</CyberCard>
 ```
 
 ---
 
 ## Resultado Esperado
 
-- Fundo animado escuro com linhas neon em todo o site
-- Cards estilo bento grid modernos
-- Botões com animações de ciclo de texto
-- Erros de build corrigidos
-- Performance otimizada com WebGL
-- Fallback CSS para dispositivos sem suporte
+- Zero componentes com fundo branco em todo o site
+- Cards com visual cyberpunk/futurista consistente
+- Efeitos de hover interativos (spotlight, glow)
+- Bordas animadas com gradiente neon
+- Integração perfeita com o fundo procedural do site
+- Visual premium e não genérico
