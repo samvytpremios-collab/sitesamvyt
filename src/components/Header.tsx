@@ -93,7 +93,7 @@ const Header = () => {
                 </SheetHeader>
 
                 {/* Main Navigation */}
-                <nav className="flex-1 flex flex-col p-4 gap-2">
+                <nav className="flex-1 flex flex-col p-4 gap-1.5">
                   {mainNavLinks.map((link) => {
                     const Icon = link.icon;
                     const isActive = location.pathname === link.to;
@@ -103,33 +103,40 @@ const Header = () => {
                         to={link.to}
                         onClick={closeMenu}
                         className={cn(
-                          'flex items-center gap-4 px-4 py-4 rounded-xl font-heading font-semibold text-base transition-all duration-200 tracking-wide',
+                          'flex items-center gap-3 px-3 py-3 rounded-xl font-heading font-semibold text-sm transition-all duration-200',
                           isActive
-                            ? 'bg-primary/10 text-primary border border-primary/30'
-                            : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+                            ? 'bg-primary/15 text-primary border border-primary/40 shadow-[0_0_15px_hsl(187_100%_50%_/_0.15)]'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'
                         )}
                       >
-                        <Icon className="w-5 h-5" />
+                        <div className={cn(
+                          'p-2 rounded-lg transition-colors',
+                          isActive ? 'bg-primary/20' : 'bg-secondary/50'
+                        )}>
+                          <Icon className="w-4 h-4" />
+                        </div>
                         {link.label}
                       </Link>
                     );
                   })}
 
-                  {/* Divider */}
-                  <div className="h-px bg-border my-2" />
+                  {/* Separador com gradiente */}
+                  <div className="h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent my-3" />
 
-                  {/* Minhas Cotas - Destacado */}
+                  {/* Minhas Cotas - Mais compacto */}
                   <Link
                     to="/login"
                     onClick={closeMenu}
                     className={cn(
-                      'flex items-center gap-4 px-4 py-4 rounded-xl font-heading font-bold text-base border-2 transition-all duration-200 tracking-wide',
+                      'flex items-center gap-3 px-3 py-3 rounded-xl font-heading font-bold text-sm border transition-all duration-200',
                       location.pathname.startsWith('/login') || location.pathname.startsWith('/minhas-cotas')
                         ? 'bg-primary text-primary-foreground border-primary shadow-[0_0_20px_hsl(187_100%_50%_/_0.3)]'
-                        : 'border-primary/50 text-primary hover:bg-primary hover:text-primary-foreground hover:shadow-[0_0_20px_hsl(187_100%_50%_/_0.3)]'
+                        : 'border-primary/50 text-primary hover:bg-primary/10 hover:shadow-[0_0_15px_hsl(187_100%_50%_/_0.2)]'
                     )}
                   >
-                    <Ticket className="w-5 h-5" />
+                    <div className="p-2 rounded-lg bg-primary/20">
+                      <Ticket className="w-4 h-4" />
+                    </div>
                     Minhas Cotas
                   </Link>
                 </nav>
