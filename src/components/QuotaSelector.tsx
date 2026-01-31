@@ -308,33 +308,35 @@ const QuotaSelector = () => {
 
         {/* Order Summary */}
         <HolographicCard className="mb-6">
-          <div className="p-6 space-y-4">
-            <div className="flex items-center gap-2">
-              <h3 className="font-heading font-bold text-lg tracking-wide">Resumo do Pedido</h3>
-            </div>
-
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Quantidade</span>
-                <span className="font-medium">{quantity} {quantity === 1 ? 'cota' : 'cotas'}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Preço unitário</span>
-                <span className="font-medium">{formatCurrency(pricePerQuota)}</span>
-              </div>
+          <div className="p-6">
+            <h3 className="font-heading font-bold text-lg tracking-wide mb-4">Resumo do Pedido</h3>
+            
+            <div className="grid grid-cols-[1fr_auto] gap-y-3 items-center">
+              <span className="text-muted-foreground text-sm">Quantidade</span>
+              <span className="font-medium text-sm text-right tabular-nums">
+                {quantity} {quantity === 1 ? 'cota' : 'cotas'}
+              </span>
+              
+              <span className="text-muted-foreground text-sm">Preço unitário</span>
+              <span className="font-medium text-sm text-right tabular-nums">
+                {formatCurrency(pricePerQuota)}
+              </span>
+              
               {selectedNumbers.length > 0 && (
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Números selecionados</span>
-                  <span className="font-medium text-primary">{selectedNumbers.length}</span>
-                </div>
+                <>
+                  <span className="text-muted-foreground text-sm">Números selecionados</span>
+                  <span className="font-medium text-sm text-primary text-right tabular-nums">
+                    {selectedNumbers.length}
+                  </span>
+                </>
               )}
-              <div className="h-px bg-border my-2" />
-              <div className="flex justify-between items-center">
-                <span className="font-semibold text-lg">Total</span>
-                <span className="font-display font-bold text-2xl gradient-text">
-                  {formatCurrency(totalPrice)}
-                </span>
-              </div>
+              
+              <div className="col-span-2 h-px bg-gradient-to-r from-transparent via-border to-transparent my-1" />
+              
+              <span className="font-semibold">Total</span>
+              <span className="font-display font-bold text-xl gradient-text text-right tabular-nums">
+                {formatCurrency(totalPrice)}
+              </span>
             </div>
           </div>
         </HolographicCard>
