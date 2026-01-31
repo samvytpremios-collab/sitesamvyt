@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Shield, Award, Eye, CreditCard } from 'lucide-react';
+import { HolographicCard } from '@/components/ui/holographic-card';
 
 const badges = [
   {
@@ -7,32 +8,24 @@ const badges = [
     title: 'Loteria Federal',
     description: 'Sorteio oficial e auditável',
     color: 'text-amber-500',
-    bgColor: 'bg-amber-500/10',
-    borderColor: 'border-amber-500/20',
   },
   {
     icon: Shield,
     title: 'Pagamento Seguro',
     description: 'Dados 100% protegidos',
     color: 'text-green-500',
-    bgColor: 'bg-green-500/10',
-    borderColor: 'border-green-500/20',
   },
   {
     icon: Eye,
     title: 'Transparência Total',
     description: 'Acompanhe tudo em tempo real',
     color: 'text-primary',
-    bgColor: 'bg-primary/10',
-    borderColor: 'border-primary/20',
   },
   {
     icon: CreditCard,
     title: 'PIX Instantâneo',
     description: 'Confirmação em segundos',
     color: 'text-blue-500',
-    bgColor: 'bg-blue-500/10',
-    borderColor: 'border-blue-500/20',
   },
 ];
 
@@ -64,15 +57,17 @@ const TrustBadges = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.1 }}
-              className={`p-4 rounded-2xl ${badge.bgColor} border ${badge.borderColor}
-                        text-center space-y-2`}
             >
-              <div className={`w-12 h-12 rounded-xl ${badge.bgColor} mx-auto
-                            flex items-center justify-center`}>
-                <badge.icon className={`w-6 h-6 ${badge.color}`} />
-              </div>
-              <h3 className="font-display font-bold text-sm">{badge.title}</h3>
-              <p className="text-xs text-muted-foreground">{badge.description}</p>
+              <HolographicCard className="h-full">
+                <div className="p-4 text-center space-y-2">
+                  <div className="w-12 h-12 rounded-xl bg-secondary/50 mx-auto
+                                flex items-center justify-center">
+                    <badge.icon className={`w-6 h-6 ${badge.color}`} />
+                  </div>
+                  <h3 className="font-display font-bold text-sm">{badge.title}</h3>
+                  <p className="text-xs text-muted-foreground">{badge.description}</p>
+                </div>
+              </HolographicCard>
             </motion.div>
           ))}
         </div>
