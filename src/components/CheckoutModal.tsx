@@ -337,6 +337,27 @@ const CheckoutModal = ({ isOpen, onClose, quantity, totalPrice, selectedNumbers 
                     <p className="text-sm text-muted-foreground">{customerData.phone}</p>
                   </div>
 
+                  {/* Payment Methods */}
+                  <div className="p-4 rounded-xl bg-secondary/50 border border-border">
+                    <h4 className="font-medium text-sm text-muted-foreground mb-3">Formas de pagamento</h4>
+                    <div className="flex gap-3">
+                      <div className="flex-1 flex items-center gap-2 p-3 rounded-lg bg-background/50 border border-border">
+                        <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
+                          <span className="text-green-500 font-bold text-xs">PIX</span>
+                        </div>
+                        <span className="text-sm font-medium">PIX</span>
+                      </div>
+                      <div className="flex-1 flex items-center gap-2 p-3 rounded-lg bg-background/50 border border-border">
+                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                          <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/>
+                          </svg>
+                        </div>
+                        <span className="text-sm font-medium">Cartão</span>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Trust Badges */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="flex items-center gap-2 p-3 rounded-xl bg-green-500/10 border border-green-500/20">
