@@ -7,6 +7,7 @@ import QuotaSelector from '@/components/QuotaSelector';
 import TrustBadges from '@/components/TrustBadges';
 import Footer from '@/components/Footer';
 import ProceduralGroundBackground from '@/components/ui/procedural-ground-background';
+import TermsNotification from '@/components/TermsNotification';
 
 const Index = () => {
   const [showIntro, setShowIntro] = useState(true);
@@ -56,6 +57,9 @@ const Index = () => {
 
           {/* Footer */}
           <Footer />
+
+          {/* Terms Notification */}
+          <TermsNotification />
         </motion.div>
       )}
     </div>
