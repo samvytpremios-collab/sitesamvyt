@@ -35,13 +35,13 @@ const Header = () => {
   const closeMenu = () => setIsOpen(false);
   return <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50 transition-all duration-300">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2" onClick={closeMenu}>
             <motion.img 
               src={samvytLogo} 
               alt="SamVyt" 
-              className="h-8 w-auto object-contain"
+              className="h-12 w-auto object-contain"
               whileHover={{ scale: 1.02 }}
               transition={{ type: 'spring', stiffness: 400 }}
             />
@@ -70,9 +70,11 @@ const Header = () => {
               <SheetContent side="right" className="w-[280px] p-0">
                 <SheetHeader className="p-6 border-b border-border">
                   <SheetTitle className="text-left">
-                    <span className="text-xl font-display font-bold gradient-text">
-                      SamVyt Prêmios
-                    </span>
+                    <img 
+                      src={samvytLogo} 
+                      alt="SamVyt" 
+                      className="h-10 w-auto object-contain"
+                    />
                   </SheetTitle>
                 </SheetHeader>
                 
