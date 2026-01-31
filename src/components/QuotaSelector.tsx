@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Minus, Shuffle, ShoppingCart, Check, TrendingUp, Loader2 } from 'lucide-react';
 import { SolidButton } from '@/components/ui/solid-button';
 import { CyberCard } from '@/components/ui/cyber-card';
+import { HolographicCard } from '@/components/ui/holographic-card';
 import CheckoutModal from '@/components/CheckoutModal';
 import QuotaTicket from '@/components/QuotaTicket';
 import { useRaffleData } from '@/hooks/useRaffleData';
@@ -306,8 +307,8 @@ const QuotaSelector = () => {
         </AnimatePresence>
 
         {/* Order Summary */}
-        <CyberCard variant="spotlight" glowColor="mixed" className="mb-6 p-6">
-          <div className="space-y-4">
+        <HolographicCard className="mb-6">
+          <div className="p-6 space-y-4">
             <div className="flex items-center gap-2">
               <h3 className="font-heading font-bold text-lg tracking-wide">Resumo do Pedido</h3>
             </div>
@@ -336,7 +337,7 @@ const QuotaSelector = () => {
               </div>
             </div>
           </div>
-        </CyberCard>
+        </HolographicCard>
 
         {/* CTA Button */}
         <motion.div
