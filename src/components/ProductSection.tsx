@@ -58,11 +58,8 @@ const ProductSection = () => {
         duration: 0.8,
         type: 'spring'
       }}>
-          {/* Glow effect */}
-          <div className="absolute inset-0 blur-3xl bg-primary/30 rounded-full scale-125" />
-
-          {/* iPhone Image */}
-          <motion.img src={iphoneImage} alt="iPhone 17 Pro" className="relative w-56 h-auto md:w-72 lg:w-80 drop-shadow-[0_0_30px_rgba(0,229,255,0.4)]" animate={{
+        {/* iPhone Image */}
+          <motion.img src={iphoneImage} alt="iPhone 17 Pro" className="relative w-56 h-auto md:w-72 lg:w-80" animate={{
           y: [0, -10, 0]
         }} transition={{
           duration: 3,
