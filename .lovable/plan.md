@@ -1,95 +1,181 @@
 
-# Plano: Corrigir Navegação e Layout Mobile
+# Plano: Atualização Visual Completa
 
-## Problema Identificado
+## Visão Geral
 
-Analisando a imagem, o problema **não é o menu drawer**, mas sim uma **sobreposição de z-index** onde os elementos do ProductSection (Chip A21 Pro, Câmera 200MP, Garantia Apple) estão aparecendo sobre o QuotaSelector, criando uma bagunça visual.
-
-**Causa raiz**: O `AuroraBackground` usa `z-10` para seu conteúdo, enquanto o `QuotaSelector` também tem elementos com `z-10`, criando conflitos de stacking context.
+Este plano inclui correção de erros de build, novos componentes visuais (fundo animado procedural, bento grid cards, botões animados) e aplicação do tema escuro em todo o site.
 
 ---
 
-## Solucao
+## 1. Correção de Erros de Build
 
-### 1. Corrigir z-index do AuroraBackground
+### Arquivos Afetados
+- `src/pages/Login.tsx`
+- `src/pages/MinhasCotas.tsx`
 
-**Arquivo**: `src/components/AuroraBackground.tsx`
+### Problema
+O código está usando `.table()` que não existe no cliente Supabase. O método correto é `.from()`.
 
-- Remover `z-10` do container de children
-- Adicionar `overflow-hidden` para evitar vazamento de conteudo
-- O background WebGL ja fica atras naturalmente (z-index default)
+### Correções
 
-**De:**
-```tsx
-<div className="absolute inset-0 z-10">
-  {children}
-</div>
+**Login.tsx (linha 35)**
+```typescript
+// DE:
+const { data: users, error: userError } = await supabase.table('users')
+
+// PARA:
+const { data: users, error: userError } = await supabase.from('users')
 ```
 
-**Para:**
-```tsx
-<div className="relative z-0">
-  {children}
-</div>
+**MinhasCotas.tsx (linhas 61, 72, 83)**
+```typescript
+// DE:
+supabase.table('transactions')
+supabase.table('quotas')
+supabase.table('raffle_configs')
+
+// PARA:
+supabase.from('transactions')
+supabase.from('quotas')
+supabase.from('raffle_configs')
 ```
-
-### 2. Ajustar ProductSection
-
-**Arquivo**: `src/components/ProductSection.tsx`
-
-- Garantir que o conteudo fique isolado dentro do AuroraBackground
-- Adicionar `isolate` para criar stacking context proprio
-
-### 3. Corrigir QuotaSelector
-
-**Arquivo**: `src/components/QuotaSelector.tsx`
-
-- Ajustar z-index do container para nao conflitar
-- Mudar de `z-10` para `z-0` no container principal
-
-### 4. Melhorar navegacao mobile no Header
-
-**Arquivo**: `src/components/Header.tsx`
-
-- Aumentar z-index do header para `z-50` (ja esta)
-- Garantir que o Sheet overlay tenha z-index maior
-- Melhorar posicionamento do botao X no drawer
 
 ---
 
-## Alteracoes Detalhadas
+## 2. Novo Componente: Fundo Animado Procedural
 
-### AuroraBackground.tsx
+### Arquivo
+`src/components/ui/procedural-ground-background.tsx`
 
-```text
-Linha 30-32 (CSSFallback):
-- Mudar: <div className="absolute inset-0 z-10">
-- Para:  <div className="relative">
+### Descrição
+Fundo WebGL com linhas topográficas neon e movimento de ondulação. Usa shaders para performance otimizada.
 
-Linha 185:
-- Mudar: <div className="absolute inset-0 z-10">
-- Para:  <div className="relative">
+### Características
+- Canvas WebGL fullscreen
+- Efeito de perspectiva de terreno
+- Linhas neon topográficas (roxo/azul elétrico)
+- Animação fluida de ondulação
+- Fallback para CSS se WebGL não disponível
+- Performance otimizada
+
+### Paleta de Cores do Shader
+```glsl
+baseColor = vec3(0.04, 0.03, 0.12);  // Deep Space
+accentColor = vec3(0.1, 0.3, 0.8);   // Electric Blue
+neonColor = vec3(0.6, 0.2, 1.0);      // Neon Purple
 ```
 
-### QuotaSelector.tsx
+---
+
+## 3. Novo Componente: Bento Grid Cards
+
+### Arquivo
+`src/components/ui/bento-grid.tsx`
+
+### Descrição
+Grid de cards estilo Bento com design moderno, tags, ícones e efeitos de hover.
+
+### Características
+- Layout responsivo (1 coluna mobile, 3 colunas desktop)
+- Suporte a col-span para cards maiores
+- Efeito de hover com elevação e gradiente
+- Tags clicáveis
+- Status badges
+- Ícones personalizáveis
+
+---
+
+## 4. Novo Componente: Status Cycle Button
+
+### Arquivo
+`src/components/ui/status-cycle-button.tsx`
+
+### Descrição
+Botão que cicla automaticamente entre diferentes textos/estados com animação de blur.
+
+### Características
+- Animação de transição com blur
+- Ciclo automático configurável
+- Suporte a variantes do shadcn Button
+- Usa framer-motion para animações
+
+---
+
+## 5. Aplicação do Fundo Animado em Todo o Site
+
+### Arquivos Afetados
+- `src/pages/Index.tsx` - Wrapper principal
+- `src/components/ProductSection.tsx` - Substituir AuroraBackground
+- `src/components/QuotaSelector.tsx` - Adicionar fundo
+
+### Estratégia
+Criar um wrapper global que aplica o fundo procedural em todas as seções, garantindo que o efeito seja contínuo ao scrollar.
+
+---
+
+## 6. Estrutura de Arquivos
 
 ```text
-Linha 100:
-- Mudar: <div className="relative z-10 container mx-auto max-w-md">
-- Para:  <div className="relative container mx-auto max-w-md">
+src/
+├── components/
+│   ├── ui/
+│   │   ├── procedural-ground-background.tsx  (NOVO)
+│   │   ├── bento-grid.tsx                    (NOVO)
+│   │   └── status-cycle-button.tsx           (NOVO)
+│   ├── ProceduralBackground.tsx              (NOVO - wrapper)
+│   └── ...
+├── pages/
+│   ├── Index.tsx                             (ATUALIZAR)
+│   ├── Login.tsx                             (CORRIGIR)
+│   └── MinhasCotas.tsx                       (CORRIGIR)
 ```
 
-### ProductSection.tsx
+---
 
-```text
-Adicionar classe `isolate` no container principal para isolar stacking context
+## Detalhes Técnicos
+
+### ProceduralGroundBackground Component
+
+```typescript
+// Inicialização WebGL
+const gl = canvas.getContext('webgl');
+
+// Vertex Shader - Tela cheia
+attribute vec2 position;
+void main() { gl_Position = vec4(position, 0.0, 1.0); }
+
+// Fragment Shader - Efeito principal
+- Simulação de perspectiva de terreno
+- Ruído procedural em camadas
+- Linhas topográficas neon
+- Fade de horizonte
+
+// Loop de animação
+requestAnimationFrame(render);
+- Atualiza u_time para animação
+- Redimensiona canvas com window
+```
+
+### Integração no Index.tsx
+
+```tsx
+<ProceduralBackground className="fixed inset-0 -z-10" />
+<main className="relative z-10">
+  <Header />
+  <ProductSection />
+  <QuotaSelector />
+  <TrustBadges />
+  <Footer />
+</main>
 ```
 
 ---
 
 ## Resultado Esperado
 
-- ProductSection fica contido dentro do AuroraBackground
-- QuotaSelector aparece corretamente abaixo, sem sobreposicoes
-- Navegacao mobile funciona sem conflitos
-- Header permanece fixo no topo com maior prioridade
+- Fundo animado escuro com linhas neon em todo o site
+- Cards estilo bento grid modernos
+- Botões com animações de ciclo de texto
+- Erros de build corrigidos
+- Performance otimizada com WebGL
+- Fallback CSS para dispositivos sem suporte
