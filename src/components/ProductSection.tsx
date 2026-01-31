@@ -27,7 +27,7 @@ const ProductSection = () => {
       }} transition={{
         duration: 0.8
       }} className="text-center mb-12">
-          <motion.span className="inline-block px-4 py-2 rounded-full glass-card font-display text-sm mb-6 text-[#b1c8d2]" initial={{
+          <motion.span className="inline-block px-4 py-2 rounded-full glass-card text-primary font-display text-sm mb-6" initial={{
           scale: 0
         }} whileInView={{
           scale: 1
@@ -41,10 +41,10 @@ const ProductSection = () => {
           </motion.span>
           
           <h2 className="text-4xl md:text-6xl lg:text-7xl font-display font-bold mb-4">
-            <span className="gradient-text text-neutral-400 bg-zinc-500">iPhone 17 Pro</span>
+            <span className="gradient-text">iPhone 17 Pro</span>
           </h2>
           
-          <p className="text-xl md:text-2xl max-w-2xl mx-auto text-secondary-foreground">
+          <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto">
             O smartphone mais avançado da Apple pode ser seu por apenas
           </p>
         </motion.div>
@@ -94,31 +94,7 @@ const ProductSection = () => {
         </motion.div>
 
         {/* Features */}
-        <motion.div initial={{
-        opacity: 0,
-        y: 30
-      }} whileInView={{
-        opacity: 1,
-        y: 0
-      }} viewport={{
-        once: true
-      }} transition={{
-        delay: 0.6
-      }} className="flex flex-wrap justify-center gap-6 mb-12">
-          {features.map((feature, index) => (
-            <motion.div
-              key={index}
-              className="flex items-center gap-2 px-4 py-2 rounded-full glass-card"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.6 + index * 0.1 }}
-            >
-              <feature.icon className="w-5 h-5 text-primary" />
-              <span className="font-heading text-sm text-foreground">{feature.text}</span>
-            </motion.div>
-          ))}
-        </motion.div>
+        
 
         {/* CTA Button */}
         <motion.div initial={{
