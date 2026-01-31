@@ -15,16 +15,17 @@ export const SimpleCard = ({
   return (
     <div
       className={cn(
-        // Base styles - minimalista
+        // Base styles - dark theme futurista
         'rounded-2xl',
-        'bg-white dark:bg-gray-900',
-        'border border-gray-200 dark:border-gray-800',
-        'shadow-sm',
+        'bg-card/80 backdrop-blur-xl',
+        'border border-border/50',
+        'shadow-[0_0_30px_rgba(0,217,255,0.05)]',
         
         // Hover effect (opcional)
         hover && [
-          'transition-all duration-200',
-          'hover:shadow-md hover:border-gray-300 dark:hover:border-gray-700',
+          'transition-all duration-300',
+          'hover:shadow-[0_0_40px_rgba(0,217,255,0.1)]',
+          'hover:border-primary/30',
         ],
         
         className

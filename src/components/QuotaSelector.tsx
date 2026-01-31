@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Minus, Shuffle, ShoppingCart, Check, TrendingUp, Loader2 } from 'lucide-react';
 import { SolidButton } from '@/components/ui/solid-button';
-import { SimpleCard } from '@/components/ui/simple-card';
+import { CyberCard } from '@/components/ui/cyber-card';
 import CheckoutModal from '@/components/CheckoutModal';
 import QuotaTicket from '@/components/QuotaTicket';
 import { useRaffleData } from '@/hooks/useRaffleData';
@@ -158,7 +158,7 @@ const QuotaSelector = () => {
         </motion.div>
 
         {/* Quantity Counter */}
-        <SimpleCard className="mb-6 p-6">
+        <CyberCard variant="bordered" glowColor="cyan" className="mb-6 p-6">
           <div className="flex flex-col items-center py-6">
             <div className="flex items-center justify-center gap-6">
               {/* Decrement Button */}
@@ -226,7 +226,7 @@ const QuotaSelector = () => {
               />
             </div>
           </div>
-        </SimpleCard>
+        </CyberCard>
 
         {/* Quick Add Chips */}
         <motion.div
@@ -306,7 +306,7 @@ const QuotaSelector = () => {
         </AnimatePresence>
 
         {/* Order Summary */}
-        <SimpleCard className="mb-6 p-6">
+        <CyberCard variant="spotlight" glowColor="mixed" className="mb-6 p-6">
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <h3 className="font-heading font-bold text-lg tracking-wide">Resumo do Pedido</h3>
@@ -336,7 +336,7 @@ const QuotaSelector = () => {
               </div>
             </div>
           </div>
-        </SimpleCard>
+        </CyberCard>
 
         {/* CTA Button */}
         <motion.div
