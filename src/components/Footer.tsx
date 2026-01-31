@@ -39,20 +39,8 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Links */}
+          {/* Links - Apenas Termos e Privacidade (os outros estão no Header) */}
           <div className="flex flex-wrap items-center justify-center gap-6 text-sm">
-            <Link 
-              to="/como-funciona" 
-              className="text-muted-foreground hover:text-primary transition-colors"
-            >
-              Como Funciona
-            </Link>
-            <Link 
-              to="/faq" 
-              className="text-muted-foreground hover:text-primary transition-colors"
-            >
-              FAQ
-            </Link>
             <Link 
               to="/termos" 
               className="text-muted-foreground hover:text-primary transition-colors"
