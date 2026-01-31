@@ -1,123 +1,95 @@
 
-# Plano: Atualização Visual - Fontes, Cores e Navegação
+# Plano: Corrigir Navegação e Layout Mobile
 
-## Visão Geral
+## Problema Identificado
 
-Baseado na logo SamVyt (estilo racing/speed, itálica, com reflexo cromado azul), vamos atualizar as fontes para combinar melhor com a identidade visual e corrigir a navegação mobile.
+Analisando a imagem, o problema **não é o menu drawer**, mas sim uma **sobreposição de z-index** onde os elementos do ProductSection (Chip A21 Pro, Câmera 200MP, Garantia Apple) estão aparecendo sobre o QuotaSelector, criando uma bagunça visual.
 
----
-
-## 1. Novas Fontes
-
-### Fonte Principal (Títulos e Destaques)
-- **Orbitron** - Fonte futurista geométrica que combina com o estilo tech/racing da logo
-- Alternativa complementar: **Rajdhani** para subtítulos (mais leve, mantém o estilo moderno)
-
-### Fonte de Corpo
-- Manter **Inter** para texto corrido (já está funcionando bem)
+**Causa raiz**: O `AuroraBackground` usa `z-10` para seu conteúdo, enquanto o `QuotaSelector` também tem elementos com `z-10`, criando conflitos de stacking context.
 
 ---
 
-## 2. Alterações nos Arquivos
+## Solucao
 
-### `index.html`
-- Atualizar título da página de "Lovable App" para "SamVyt Prêmios"
-- Atualizar meta descriptions
+### 1. Corrigir z-index do AuroraBackground
 
-### `src/index.css`
-- Trocar import do Google Fonts:
-  - Remover: Space Grotesk
-  - Adicionar: Orbitron (pesos 400, 500, 600, 700, 900)
-  - Adicionar: Rajdhani (pesos 400, 500, 600, 700)
-- Atualizar regras CSS para usar as novas fontes
+**Arquivo**: `src/components/AuroraBackground.tsx`
 
-### `tailwind.config.ts`
-- Atualizar `fontFamily`:
-  - `display`: Orbitron (para títulos principais)
-  - `heading`: Rajdhani (para subtítulos)
-  - `body`: Inter (manter)
+- Remover `z-10` do container de children
+- Adicionar `overflow-hidden` para evitar vazamento de conteudo
+- O background WebGL ja fica atras naturalmente (z-index default)
 
-### `src/components/Header.tsx`
-**Correções no Mobile:**
-- Reposicionar botão do menu mobile para melhor alinhamento
-- Ajustar espaçamento dos links no drawer
-- Melhorar transições e feedback visual
-- Adicionar efeito de hover mais suave nos links
-- Corrigir posição dos links do footer no drawer
-
----
-
-## 3. Aplicação das Novas Fontes
-
-### Onde usar Orbitron (font-display)
-- Títulos principais (h1, h2)
-- Números de cotas
-- Preços em destaque
-- Logo textual (fallback)
-- Animação de intro "SAMVYT"
-
-### Onde usar Rajdhani (font-heading)
-- Subtítulos (h3, h4, h5, h6)
-- Labels e badges
-- Botões
-- Navegação
-
-### Onde usar Inter (font-body)
-- Parágrafos
-- Descrições
-- Texto geral
-
----
-
-## 4. Componentes Afetados
-
-| Componente | Mudança |
-|------------|---------|
-| `Header.tsx` | Corrigir navegação mobile, melhorar espaçamentos |
-| `ProductSection.tsx` | Aplicar novas fontes |
-| `QuotaSelector.tsx` | Aplicar novas fontes nos números e títulos |
-| `IntroAnimation.tsx` | Usar Orbitron no texto "SAMVYT" |
-| `Footer.tsx` | Aplicar novas fontes |
-| `QuotaTicket.tsx` | Aplicar novas fontes nos números |
-
----
-
-## Detalhes Técnicos
-
-### Import das Fontes (Google Fonts)
-```css
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700;900&family=Rajdhani:wght@400;500;600;700&display=swap');
+**De:**
+```tsx
+<div className="absolute inset-0 z-10">
+  {children}
+</div>
 ```
 
-### Configuração Tailwind
-```javascript
-fontFamily: {
-  display: ["Orbitron", "sans-serif"],  // Títulos principais
-  heading: ["Rajdhani", "sans-serif"],   // Subtítulos e navegação
-  body: ["Inter", "sans-serif"],         // Corpo de texto
-}
+**Para:**
+```tsx
+<div className="relative z-0">
+  {children}
+</div>
 ```
 
-### Classes CSS Atualizadas
-```css
-h1, h2 {
-  font-family: 'Orbitron', sans-serif;
-}
+### 2. Ajustar ProductSection
 
-h3, h4, h5, h6 {
-  font-family: 'Rajdhani', sans-serif;
-}
+**Arquivo**: `src/components/ProductSection.tsx`
 
-body {
-  font-family: 'Inter', sans-serif;
-}
+- Garantir que o conteudo fique isolado dentro do AuroraBackground
+- Adicionar `isolate` para criar stacking context proprio
+
+### 3. Corrigir QuotaSelector
+
+**Arquivo**: `src/components/QuotaSelector.tsx`
+
+- Ajustar z-index do container para nao conflitar
+- Mudar de `z-10` para `z-0` no container principal
+
+### 4. Melhorar navegacao mobile no Header
+
+**Arquivo**: `src/components/Header.tsx`
+
+- Aumentar z-index do header para `z-50` (ja esta)
+- Garantir que o Sheet overlay tenha z-index maior
+- Melhorar posicionamento do botao X no drawer
+
+---
+
+## Alteracoes Detalhadas
+
+### AuroraBackground.tsx
+
+```text
+Linha 30-32 (CSSFallback):
+- Mudar: <div className="absolute inset-0 z-10">
+- Para:  <div className="relative">
+
+Linha 185:
+- Mudar: <div className="absolute inset-0 z-10">
+- Para:  <div className="relative">
+```
+
+### QuotaSelector.tsx
+
+```text
+Linha 100:
+- Mudar: <div className="relative z-10 container mx-auto max-w-md">
+- Para:  <div className="relative container mx-auto max-w-md">
+```
+
+### ProductSection.tsx
+
+```text
+Adicionar classe `isolate` no container principal para isolar stacking context
 ```
 
 ---
 
 ## Resultado Esperado
 
-- Fontes combinando com o estilo racing/futurista da logo
-- Navegação mobile mais organizada e funcional
-- Hierarquia tipográfica clara e consistente
-- Melhor experiência visual em todos os dispositivos
+- ProductSection fica contido dentro do AuroraBackground
+- QuotaSelector aparece corretamente abaixo, sem sobreposicoes
+- Navegacao mobile funciona sem conflitos
+- Header permanece fixo no topo com maior prioridade
