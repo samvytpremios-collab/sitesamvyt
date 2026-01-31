@@ -38,13 +38,12 @@ const Header = () => {
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2" onClick={closeMenu}>
-            <motion.img 
-              src={samvytLogo} 
-              alt="SamVyt" 
-              className="h-12 w-auto object-contain"
-              whileHover={{ scale: 1.02 }}
-              transition={{ type: 'spring', stiffness: 400 }}
-            />
+            <motion.img alt="SamVyt" className="h-12 w-auto object-contain" whileHover={{
+            scale: 1.02
+          }} transition={{
+            type: 'spring',
+            stiffness: 400
+          }} src="/lovable-uploads/8f4d108d-e7df-4b33-9fff-4d8f9c152acc.png" />
           </Link>
 
           {/* Desktop Navigation */}
@@ -70,11 +69,7 @@ const Header = () => {
               <SheetContent side="right" className="w-[280px] p-0">
                 <SheetHeader className="p-6 border-b border-border">
                   <SheetTitle className="text-left">
-                    <img 
-                      src={samvytLogo} 
-                      alt="SamVyt" 
-                      className="h-10 w-auto object-contain"
-                    />
+                    <img src={samvytLogo} alt="SamVyt" className="h-10 w-auto object-contain" />
                   </SheetTitle>
                 </SheetHeader>
                 
