@@ -58,7 +58,7 @@ const MinhasCotas = () => {
 
       // Buscar transações do usuário
       const { data: transData, error: transError } = await supabase
-        .table('transactions')
+        .from('transactions')
         .select('*')
         .eq('user_id', userSession.id)
         .order('created_at', { ascending: false });
@@ -69,7 +69,7 @@ const MinhasCotas = () => {
 
       // Buscar cotas do usuário
       const { data: quotasData, error: quotasError } = await supabase
-        .table('quotas')
+        .from('quotas')
         .select('*')
         .eq('user_id', userSession.id);
 
@@ -80,7 +80,7 @@ const MinhasCotas = () => {
       // Buscar informações da rifa
       if (transData && transData.length > 0) {
         const { data: raffleData, error: raffleError } = await supabase
-          .table('raffle_configs')
+          .from('raffle_configs')
           .select('*')
           .eq('id', transData[0].raffle_id)
           .single();

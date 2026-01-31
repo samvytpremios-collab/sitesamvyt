@@ -6,7 +6,7 @@ import ProductSection from '@/components/ProductSection';
 import QuotaSelector from '@/components/QuotaSelector';
 import TrustBadges from '@/components/TrustBadges';
 import Footer from '@/components/Footer';
-
+import ProceduralGroundBackground from '@/components/ui/procedural-ground-background';
 
 const Index = () => {
   const [showIntro, setShowIntro] = useState(true);
@@ -25,7 +25,10 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
+    <div className="min-h-screen relative">
+      {/* Global Procedural Background */}
+      <ProceduralGroundBackground className="fixed inset-0 -z-10" />
+
       <AnimatePresence>
         {showIntro && (
           <IntroAnimation onComplete={() => setShowIntro(false)} />
@@ -37,11 +40,12 @@ const Index = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
+          className="relative z-10"
         >
           {/* Global Header */}
           <Header />
 
-          {/* Product Section - iPhone 17 Pro with Aurora Background */}
+          {/* Product Section - iPhone 17 Pro */}
           <ProductSection />
 
           {/* Quota Selector Section */}
