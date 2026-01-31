@@ -1,178 +1,220 @@
 
-# Plano: Integrar HolographicCard no Resumo do Pedido
 
-## Visão Geral
+# Plano: Otimização do Resumo do Pedido e Menu Mobile
 
-Criar o componente `HolographicCard` com efeitos holográficos 3D e aplicá-lo no card de "Resumo do Pedido" do QuotaSelector, substituindo o atual `CyberCard`.
+## Problemas Identificados
 
----
+### 1. Resumo do Pedido (QuotaSelector.tsx)
+- Valores não estão alinhados corretamente à direita
+- Espaçamento inconsistente entre linhas
+- Falta de estrutura visual clara (tabela ou grid)
 
-## 1. Novo Componente: HolographicCard
-
-### Arquivo
-`src/components/ui/holographic-card.tsx`
-
-### Características
-- Efeito 3D de inclinação baseado na posição do mouse (perspective + rotateX/Y)
-- Gradiente holográfico animado que segue o cursor
-- Efeito de reflexo rainbow/holográfico
-- Borda com brilho dinâmico
-- Totalmente customizável via props
-
-### Adaptações para TypeScript
-O código original precisa de tipagem:
-```typescript
-interface HolographicCardProps {
-  children?: React.ReactNode;
-  className?: string;
-  title?: string;
-  description?: string;
-}
-```
-
-### Cores do Gradiente Holográfico
-```css
-/* Reflexo rainbow que segue o mouse */
-background: linear-gradient(
-  120deg,
-  rgba(255,0,150,0.3),
-  rgba(0,229,255,0.3),
-  rgba(150,0,255,0.3),
-  rgba(255,230,0,0.3)
-);
-```
+### 2. Menu Mobile (Header.tsx)
+- Itens muito espaçados (py-4 = 16px de padding vertical)
+- Falta de efeitos visuais futuristas
+- Botão "Minhas Cotas" pode ser mais destacado
+- Layout geral pode ser mais compacto
 
 ---
 
-## 2. Arquivos Afetados
+## Solução
 
-| Arquivo | Ação |
-|---------|------|
-| `src/components/ui/holographic-card.tsx` | **Criar** - novo componente |
-| `src/components/QuotaSelector.tsx` | **Atualizar** - usar HolographicCard no Resumo do Pedido |
+### 1. Otimizar Resumo do Pedido
+
+**Problema atual:**
+```tsx
+<div className="flex justify-between items-center">
+  <span className="text-muted-foreground">Quantidade</span>
+  <span className="font-medium">{quantity} cotas</span>
+</div>
+```
+
+**Solução:**
+Usar estrutura de grid com colunas fixas para garantir alinhamento perfeito:
+
+```tsx
+<div className="grid grid-cols-[1fr_auto] gap-y-3 gap-x-4">
+  <span className="text-muted-foreground text-sm">Quantidade</span>
+  <span className="font-medium text-right">2 cotas</span>
+  
+  <span className="text-muted-foreground text-sm">Preço unitário</span>
+  <span className="font-medium text-right">R$ 1,00</span>
+  
+  <!-- Separador ocupa as 2 colunas -->
+  <div className="col-span-2 h-px bg-border" />
+  
+  <span className="font-semibold text-base">Total</span>
+  <span className="font-bold text-xl gradient-text text-right">R$ 2,00</span>
+</div>
+```
+
+### 2. Otimizar Menu Mobile
+
+**Melhorias:**
+- Reduzir padding dos itens de `py-4` para `py-3`
+- Adicionar ícones com fundo sutil
+- Hover com efeito de glow
+- Animação de entrada escalonada
+- Separador com gradiente neon
+- Botão "Minhas Cotas" com efeito pulsante
 
 ---
 
-## 3. Alterações no QuotaSelector.tsx
+## Arquivos Afetados
 
-### Importação
-```typescript
-import { HolographicCard } from '@/components/ui/holographic-card';
-```
+| Arquivo | Alterações |
+|---------|------------|
+| `src/components/QuotaSelector.tsx` | Refatorar layout do Resumo do Pedido com grid |
+| `src/components/Header.tsx` | Otimizar menu mobile com design compacto e futurista |
 
-### Substituição (Linhas 309-339)
+---
+
+## Detalhes Técnicos
+
+### QuotaSelector.tsx - Linhas 309-340
 
 **DE:**
 ```tsx
-<CyberCard variant="spotlight" glowColor="mixed" className="mb-6 p-6">
-  <div className="space-y-4">
-    {/* conteúdo do resumo */}
+<div className="p-6 space-y-4">
+  <div className="flex items-center gap-2">
+    <h3 className="font-heading font-bold text-lg tracking-wide">Resumo do Pedido</h3>
   </div>
-</CyberCard>
+
+  <div className="space-y-2 text-sm">
+    <div className="flex justify-between items-center">
+      <span className="text-muted-foreground">Quantidade</span>
+      <span className="font-medium">{quantity} {quantity === 1 ? 'cota' : 'cotas'}</span>
+    </div>
+    <div className="flex justify-between items-center">
+      <span className="text-muted-foreground">Preço unitário</span>
+      <span className="font-medium">{formatCurrency(pricePerQuota)}</span>
+    </div>
+    {selectedNumbers.length > 0 && (
+      <div className="flex justify-between items-center">
+        <span className="text-muted-foreground">Números selecionados</span>
+        <span className="font-medium text-primary">{selectedNumbers.length}</span>
+      </div>
+    )}
+    <div className="h-px bg-border my-2" />
+    <div className="flex justify-between items-center">
+      <span className="font-semibold text-lg">Total</span>
+      <span className="font-display font-bold text-2xl gradient-text">
+        {formatCurrency(totalPrice)}
+      </span>
+    </div>
+  </div>
+</div>
 ```
 
 **PARA:**
 ```tsx
-<HolographicCard className="mb-6">
-  <div className="p-6 space-y-4">
-    {/* conteúdo do resumo - mantido igual */}
+<div className="p-6">
+  <h3 className="font-heading font-bold text-lg tracking-wide mb-4">Resumo do Pedido</h3>
+  
+  <div className="grid grid-cols-[1fr_auto] gap-y-3 items-center">
+    <span className="text-muted-foreground text-sm">Quantidade</span>
+    <span className="font-medium text-sm text-right tabular-nums">
+      {quantity} {quantity === 1 ? 'cota' : 'cotas'}
+    </span>
+    
+    <span className="text-muted-foreground text-sm">Preço unitário</span>
+    <span className="font-medium text-sm text-right tabular-nums">
+      {formatCurrency(pricePerQuota)}
+    </span>
+    
+    {selectedNumbers.length > 0 && (
+      <>
+        <span className="text-muted-foreground text-sm">Números selecionados</span>
+        <span className="font-medium text-sm text-primary text-right tabular-nums">
+          {selectedNumbers.length}
+        </span>
+      </>
+    )}
+    
+    <div className="col-span-2 h-px bg-gradient-to-r from-transparent via-border to-transparent my-1" />
+    
+    <span className="font-semibold">Total</span>
+    <span className="font-display font-bold text-xl gradient-text text-right tabular-nums">
+      {formatCurrency(totalPrice)}
+    </span>
   </div>
-</HolographicCard>
+</div>
 ```
 
----
+### Header.tsx - Menu Mobile (Linhas 96-135)
 
-## 4. Detalhes Técnicos do HolographicCard
-
-### Estrutura do Componente
+**Melhorias no nav:**
+- Padding reduzido: `py-4` → `py-3`
+- Ícones com background: `bg-secondary/50 p-2 rounded-lg`
+- Gap entre itens: `gap-2` → `gap-1.5`
+- Hover glow sutil
+- Separador com gradiente
 
 ```tsx
-const HolographicCard = ({ children, className }: HolographicCardProps) => {
-  const cardRef = useRef<HTMLDivElement>(null);
+<nav className="flex-1 flex flex-col p-4 gap-1.5">
+  {mainNavLinks.map((link, index) => {
+    const Icon = link.icon;
+    const isActive = location.pathname === link.to;
+    return (
+      <Link
+        key={link.to}
+        to={link.to}
+        onClick={closeMenu}
+        className={cn(
+          'flex items-center gap-3 px-3 py-3 rounded-xl font-heading font-semibold text-sm transition-all duration-200',
+          isActive
+            ? 'bg-primary/15 text-primary border border-primary/40 shadow-[0_0_15px_hsl(187_100%_50%_/_0.15)]'
+            : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'
+        )}
+      >
+        <div className={cn(
+          'p-2 rounded-lg transition-colors',
+          isActive ? 'bg-primary/20' : 'bg-secondary/50'
+        )}>
+          <Icon className="w-4 h-4" />
+        </div>
+        {link.label}
+      </Link>
+    );
+  })}
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Calcula rotação 3D baseada na posição do mouse
-    const rotateX = (y - centerY) / 10;
-    const rotateY = (centerX - x) / 10;
-    
-    // Atualiza CSS variables para o gradiente
-    card.style.setProperty('--x', `${x}px`);
-    card.style.setProperty('--y', `${y}px`);
-    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-  };
+  {/* Separador com gradiente */}
+  <div className="h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent my-3" />
 
-  return (
-    <div 
-      ref={cardRef}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      className="holographic-card"
-    >
-      {/* Camada de reflexo holográfico */}
-      <div className="holographic-reflection" />
-      
-      {/* Conteúdo */}
-      <div className="relative z-10">
-        {children}
-      </div>
+  {/* Minhas Cotas - Mais compacto */}
+  <Link
+    to="/login"
+    onClick={closeMenu}
+    className={cn(
+      'flex items-center gap-3 px-3 py-3 rounded-xl font-heading font-bold text-sm border transition-all duration-200',
+      location.pathname.startsWith('/login') || location.pathname.startsWith('/minhas-cotas')
+        ? 'bg-primary text-primary-foreground border-primary shadow-[0_0_20px_hsl(187_100%_50%_/_0.3)]'
+        : 'border-primary/50 text-primary hover:bg-primary/10 hover:shadow-[0_0_15px_hsl(187_100%_50%_/_0.2)]'
+    )}
+  >
+    <div className="p-2 rounded-lg bg-primary/20">
+      <Ticket className="w-4 h-4" />
     </div>
-  );
-};
-```
-
-### Estilos CSS Inline (Tailwind + CSS Variables)
-
-```css
-/* Container principal */
-.holographic-card {
-  position: relative;
-  background: rgba(10, 10, 20, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 1rem;
-  overflow: hidden;
-  transition: transform 0.1s ease-out;
-}
-
-/* Reflexo holográfico */
-.holographic-reflection {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    400px at var(--x, 50%) var(--y, 50%),
-    rgba(0, 229, 255, 0.15),
-    rgba(150, 0, 255, 0.1),
-    transparent
-  );
-  opacity: 0.8;
-  pointer-events: none;
-}
-
-/* Brilho de borda */
-.holographic-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  padding: 1px;
-  border-radius: 1rem;
-  background: linear-gradient(
-    120deg,
-    rgba(0, 229, 255, 0.5),
-    rgba(150, 0, 255, 0.5),
-    rgba(255, 150, 0, 0.3)
-  );
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask-composite: exclude;
-}
+    Minhas Cotas
+  </Link>
+</nav>
 ```
 
 ---
 
-## 5. Resultado Esperado
+## Resultado Esperado
 
-- Card do Resumo do Pedido com efeito 3D holográfico
-- Reflexo rainbow que segue o movimento do mouse
-- Inclinação suave baseada na posição do cursor
-- Borda com gradiente neon animado
-- Retorna suavemente à posição original ao sair com o mouse
-- Mantém tema escuro consistente com o resto do site
-- Performance otimizada usando CSS transforms e will-change
+### Resumo do Pedido
+- Valores perfeitamente alinhados à direita com `grid` e `text-right`
+- Números com fonte monoespaçada (`tabular-nums`) para alinhamento consistente
+- Separador com gradiente sutil
+- Visual mais limpo e profissional
+
+### Menu Mobile
+- Layout mais compacto e elegante
+- Ícones com fundo sutil que destaca o item ativo
+- Efeitos de glow nos itens ativos
+- Separador com gradiente neon
+- Transições suaves
+- Melhor hierarquia visual
+
