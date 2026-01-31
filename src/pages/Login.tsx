@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import samvytLogo from '@/assets/samvyt-logo-chrome.png';
 import { SolidButton } from '@/components/ui/solid-button';
 import { SimpleCard } from '@/components/ui/simple-card';
 import { useToast } from '@/hooks/use-toast';
@@ -88,7 +89,11 @@ const Login = () => {
     }} className="w-full max-w-md">
         {/* Logo/Header */}
         <div className="text-center mb-8">
-          
+          <img 
+            src={samvytLogo} 
+            alt="SamVyt" 
+            className="h-16 w-auto mx-auto mb-4"
+          />
           <h1 className="text-3xl font-display font-bold gradient-text mb-2">
             Acessar Minhas Cotas
           </h1>
