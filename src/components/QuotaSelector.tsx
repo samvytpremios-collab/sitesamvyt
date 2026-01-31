@@ -142,21 +142,6 @@ const QuotaSelector = () => {
               </span>
             </div>
             
-            {/* Estatísticas: vendidas e disponíveis */}
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-1.5">
-                <Check className="w-3.5 h-3.5 text-green-500" />
-                <span className="text-muted-foreground">
-                  <span className="font-semibold text-foreground">{formatNumber(stats.sold + stats.reserved)}</span> vendidas
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-3.5 h-3.5 rounded-full border-2 border-primary/50" />
-                <span className="text-muted-foreground">
-                  <span className="font-semibold text-foreground">{formatNumber(stats.available)}</span> disponíveis
-                </span>
-              </div>
-            </div>
           </div>
         </motion.div>
 
