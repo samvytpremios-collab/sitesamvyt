@@ -14,7 +14,7 @@ const ProductSection = () => {
     icon: Shield,
     text: 'Garantia Apple'
   }];
-  return <AuroraBackground className="min-h-screen w-full">
+  return <AuroraBackground className="min-h-screen w-full isolate">
       <div className="container mx-auto px-4 py-20 flex flex-col items-center justify-center min-h-screen">
         <motion.div initial={{
         opacity: 0,
