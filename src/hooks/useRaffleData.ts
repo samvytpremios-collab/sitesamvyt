@@ -100,19 +100,24 @@ export function useRaffleData() {
     if (!raffle) return [];
 
     try {
-      // Buscar cotas disponíveis aleatoriamente
-      // Usamos order para randomizar e limit para pegar a quantidade desejada
+      // Buscar mais cotas do que o necessário para garantir aleatoriedade
+      const fetchLimit = Math.min(quantity * 5, 1000);
+      
       const { data, error } = await supabase
         .from('quotas')
         .select('id, number, status')
         .eq('raffle_id', raffle.id)
         .eq('status', 'available')
-        .limit(quantity);
+        .limit(fetchLimit);
 
       if (error) throw error;
+      
+      if (!data || data.length < quantity) {
+        throw new Error('Cotas insuficientes disponíveis');
+      }
 
-      // Embaralhar os resultados no cliente para garantir aleatoriedade
-      const shuffled = (data || []).sort(() => Math.random() - 0.5);
+      // Embaralhar aleatoriamente e selecionar quantidade desejada
+      const shuffled = data.sort(() => Math.random() - 0.5);
       
       return shuffled.slice(0, quantity);
     } catch (err) {

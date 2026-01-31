@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, Mail, Phone, ArrowRight, ArrowLeft, Shield, Award, Clock, Copy, Check, Loader2, Ticket, ExternalLink } from 'lucide-react';
+import { X, User, Mail, Phone, ArrowRight, ArrowLeft, Shield, Award, Clock, Copy, Check, QrCode, Ticket } from 'lucide-react';
 import { ShineButton } from '@/components/ui/shine-button';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
 import QuotaTicket from '@/components/QuotaTicket';
-import { processCheckout } from '@/services/checkout';
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -24,20 +23,25 @@ const customerSchema = z.object({
 
 type CustomerData = z.infer<typeof customerSchema>;
 
-type Step = 'dados' | 'resumo' | 'processando' | 'sucesso';
+type Step = 'dados' | 'resumo' | 'pagamento';
 
 const CheckoutModal = ({ isOpen, onClose, quantity, totalPrice, selectedNumbers = [], raffleId }: CheckoutModalProps) => {
   const { toast } = useToast();
   const [step, setStep] = useState<Step>('dados');
   const [isLoading, setIsLoading] = useState(false);
-  const [paymentLink, setPaymentLink] = useState<string>('');
-  const [transactionId, setTransactionId] = useState<string>('');
+  const [copied, setCopied] = useState(false);
   const [customerData, setCustomerData] = useState<CustomerData>({
     name: '',
     email: '',
     phone: '',
   });
   const [errors, setErrors] = useState<Partial<CustomerData>>({});
+  
+  // Mock PIX data - será substituído pela integração real
+  const [pixData] = useState({
+    code: '00020126580014br.gov.bcb.pix0136a1b2c3d4-e5f6-7890-abcd-ef1234567890520400005303986540510.005802BR5925SAMVYT PREMIOS LTDA6009SAO PAULO62070503***6304ABCD',
+    expiresAt: new Date(Date.now() + 30 * 60 * 1000), // 30 minutos
+  });
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -82,72 +86,41 @@ const CheckoutModal = ({ isOpen, onClose, quantity, totalPrice, selectedNumbers 
       if (!validateStep()) return;
       setStep('resumo');
     } else if (step === 'resumo') {
-      if (!raffleId) {
-        toast({
-          title: 'Erro',
-          description: 'Rifa não encontrada',
-          variant: 'destructive',
-        });
-        return;
-      }
-
       setIsLoading(true);
-      setStep('processando');
-
-      try {
-        const result = await processCheckout({
-          raffleId,
-          quantity,
-          customerData: {
-            name: customerData.name,
-            email: customerData.email,
-            phone: customerData.phone.replace(/\D/g, ''),
-          },
-          selectedNumbers,
-        });
-
-        if (!result.success || !result.paymentLink) {
-          throw new Error(result.error || 'Erro ao processar checkout');
-        }
-
-        setPaymentLink(result.paymentLink);
-        setTransactionId(result.transactionId || '');
-        setStep('sucesso');
-
-        toast({
-          title: 'Pedido criado!',
-          description: 'Redirecionando para pagamento...',
-        });
-
-        // Redirecionar para o link de pagamento após 2 segundos
-        setTimeout(() => {
-          window.open(result.paymentLink, '_blank');
-        }, 2000);
-      } catch (error) {
-        console.error('Checkout error:', error);
-        toast({
-          title: 'Erro ao processar pedido',
-          description: error instanceof Error ? error.message : 'Tente novamente',
-          variant: 'destructive',
-        });
-        setStep('resumo');
-      } finally {
-        setIsLoading(false);
-      }
+      // Simular criação do pagamento PIX
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      setIsLoading(false);
+      setStep('pagamento');
     }
   };
 
   const handlePrevStep = () => {
     if (step === 'resumo') setStep('dados');
+    else if (step === 'pagamento') setStep('resumo');
+  };
+
+  const handleCopyPix = async () => {
+    await navigator.clipboard.writeText(pixData.code);
+    setCopied(true);
+    toast({
+      title: 'Código PIX copiado!',
+      description: 'Cole no app do seu banco para pagar.',
+    });
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleClose = () => {
     setStep('dados');
     setCustomerData({ name: '', email: '', phone: '' });
     setErrors({});
-    setPaymentLink('');
-    setTransactionId('');
     onClose();
+  };
+
+  const getTimeRemaining = () => {
+    const diff = pixData.expiresAt.getTime() - Date.now();
+    const minutes = Math.floor(diff / 60000);
+    const seconds = Math.floor((diff % 60000) / 1000);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
   if (!isOpen) return null;
@@ -159,7 +132,7 @@ const CheckoutModal = ({ isOpen, onClose, quantity, totalPrice, selectedNumbers 
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4"
-        onClick={step !== 'processando' ? handleClose : undefined}
+        onClick={handleClose}
       >
         <motion.div
           initial={{ y: '100%', opacity: 0 }}
@@ -174,7 +147,7 @@ const CheckoutModal = ({ isOpen, onClose, quantity, totalPrice, selectedNumbers 
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-border">
             <div className="flex items-center gap-3">
-              {step === 'resumo' && (
+              {step !== 'dados' && (
                 <button
                   onClick={handlePrevStep}
                   className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors"
@@ -186,39 +159,32 @@ const CheckoutModal = ({ isOpen, onClose, quantity, totalPrice, selectedNumbers 
                 <h3 className="font-display font-bold text-lg">
                   {step === 'dados' && 'Seus Dados'}
                   {step === 'resumo' && 'Confirmar Pedido'}
-                  {step === 'processando' && 'Processando...'}
-                  {step === 'sucesso' && 'Pedido Criado!'}
+                  {step === 'pagamento' && 'Pagamento PIX'}
                 </h3>
-                {step !== 'sucesso' && step !== 'processando' && (
-                  <p className="text-xs text-muted-foreground">
-                    Etapa {step === 'dados' ? '1' : '2'} de 2
-                  </p>
-                )}
+                <p className="text-xs text-muted-foreground">
+                  Etapa {step === 'dados' ? '1' : step === 'resumo' ? '2' : '3'} de 3
+                </p>
               </div>
             </div>
-            {step !== 'processando' && (
-              <button
-                onClick={handleClose}
-                className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center hover:bg-destructive/20 transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
+            <button
+              onClick={handleClose}
+              className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center hover:bg-destructive/20 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
 
           {/* Progress Bar */}
-          {step !== 'sucesso' && step !== 'processando' && (
-            <div className="h-1 bg-secondary">
-              <motion.div
-                className="h-full bg-gradient-to-r from-primary to-cyan-400"
-                initial={{ width: '50%' }}
-                animate={{ 
-                  width: step === 'dados' ? '50%' : '100%' 
-                }}
-                transition={{ duration: 0.3 }}
-              />
-            </div>
-          )}
+          <div className="h-1 bg-secondary">
+            <motion.div
+              className="h-full bg-gradient-to-r from-primary to-cyan-400"
+              initial={{ width: '33%' }}
+              animate={{ 
+                width: step === 'dados' ? '33%' : step === 'resumo' ? '66%' : '100%' 
+              }}
+              transition={{ duration: 0.3 }}
+            />
+          </div>
 
           {/* Content */}
           <div className="p-4 overflow-y-auto max-h-[calc(90vh-200px)]">
@@ -310,8 +276,7 @@ const CheckoutModal = ({ isOpen, onClose, quantity, totalPrice, selectedNumbers 
                   )}
 
                   {/* Order Details */}
-                  <div className="p-4 rounded-xl bg-secondary/50 border border-border space-y-2">
-                    <h4 className="font-medium text-sm text-muted-foreground">Detalhes do pedido</h4>
+                  <div className="p-4 rounded-xl bg-secondary/50 border border-border space-y-3">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Quantidade</span>
                       <span className="font-medium">{quantity} cotas</span>
@@ -351,68 +316,68 @@ const CheckoutModal = ({ isOpen, onClose, quantity, totalPrice, selectedNumbers 
                 </motion.div>
               )}
 
-              {/* Step 3: Processing */}
-              {step === 'processando' && (
+              {/* Step 3: PIX Payment */}
+              {step === 'pagamento' && (
                 <motion.div
-                  key="processando"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="flex flex-col items-center justify-center py-12 space-y-4"
-                >
-                  <Loader2 className="w-16 h-16 animate-spin text-primary" />
-                  <p className="text-lg font-medium">Criando seu pedido...</p>
-                  <p className="text-sm text-muted-foreground text-center">
-                    Aguarde enquanto reservamos suas cotas e geramos o pagamento
-                  </p>
-                </motion.div>
-              )}
-
-              {/* Step 4: Success */}
-              {step === 'sucesso' && (
-                <motion.div
-                  key="sucesso"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
+                  key="pagamento"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
                   className="space-y-4"
                 >
-                  <div className="flex flex-col items-center py-6">
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: 'spring', delay: 0.2 }}
-                      className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center mb-4"
-                    >
-                      <Check className="w-10 h-10 text-green-500" />
-                    </motion.div>
-                    <h3 className="text-2xl font-bold mb-2">Pedido Criado!</h3>
-                    <p className="text-muted-foreground text-center">
-                      Suas cotas foram reservadas. Complete o pagamento para confirmar.
+                  {/* Timer */}
+                  <div className="flex items-center justify-center gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                    <Clock className="w-5 h-5 text-amber-500" />
+                    <span className="font-medium text-amber-500">
+                      Expira em {getTimeRemaining()}
+                    </span>
+                  </div>
+
+                  {/* QR Code Placeholder */}
+                  <div className="flex flex-col items-center gap-4 p-6 rounded-xl bg-secondary/50 border border-border">
+                    <div className="w-48 h-48 bg-background rounded-xl flex items-center justify-center border border-border">
+                      <QrCode className="w-32 h-32 text-muted-foreground" />
+                    </div>
+                    <p className="text-sm text-muted-foreground text-center">
+                      Escaneie o QR Code com o app do seu banco
                     </p>
                   </div>
 
-                  {transactionId && (
-                    <div className="p-4 rounded-xl bg-secondary/50 border border-border">
-                      <p className="text-xs text-muted-foreground mb-1">Número do pedido</p>
-                      <p className="font-mono text-sm">{transactionId}</p>
-                    </div>
-                  )}
-
-                  {paymentLink && (
-                    <a
-                      href={paymentLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 w-full py-4 rounded-xl 
-                               bg-primary hover:bg-primary/90 text-primary-foreground font-medium
-                               transition-colors shadow-[0_0_20px_hsl(187_100%_50%_/_0.3)]"
+                  {/* Copy Pix Code */}
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground text-center">
+                      Ou copie o código PIX:
+                    </p>
+                    <button
+                      onClick={handleCopyPix}
+                      className="w-full p-4 rounded-xl bg-secondary border border-border
+                               hover:border-primary/50 transition-colors
+                               flex items-center justify-center gap-2"
                     >
-                      <ExternalLink className="w-5 h-5" />
-                      Ir para Pagamento
-                    </a>
-                  )}
+                      {copied ? (
+                        <>
+                          <Check className="w-5 h-5 text-green-500" />
+                          <span className="font-medium text-green-500">Copiado!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-5 h-5 text-primary" />
+                          <span className="font-medium">Copiar código PIX</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Value Display */}
+                  <div className="text-center p-4 rounded-xl bg-primary/10 border border-primary/20">
+                    <p className="text-sm text-muted-foreground">Valor a pagar</p>
+                    <p className="font-display font-bold text-3xl gradient-text">
+                      {formatCurrency(totalPrice)}
+                    </p>
+                  </div>
 
                   <p className="text-xs text-muted-foreground text-center">
-                    Você receberá seus números por email e WhatsApp após a confirmação do pagamento.
+                    Após o pagamento, você receberá seus números por email e WhatsApp.
                   </p>
                 </motion.div>
               )}
@@ -420,8 +385,8 @@ const CheckoutModal = ({ isOpen, onClose, quantity, totalPrice, selectedNumbers 
           </div>
 
           {/* Footer */}
-          {step !== 'processando' && step !== 'sucesso' && (
-            <div className="p-4 border-t border-border">
+          <div className="p-4 border-t border-border">
+            {step !== 'pagamento' ? (
               <ShineButton
                 size="lg"
                 onClick={handleNextStep}
@@ -429,13 +394,9 @@ const CheckoutModal = ({ isOpen, onClose, quantity, totalPrice, selectedNumbers 
                 className="w-full"
                 icon={<ArrowRight className="w-5 h-5" />}
               >
-                {step === 'dados' ? 'Continuar' : 'Confirmar Pedido'}
+                {step === 'dados' ? 'Continuar' : 'Gerar PIX'}
               </ShineButton>
-            </div>
-          )}
-
-          {step === 'sucesso' && (
-            <div className="p-4 border-t border-border">
+            ) : (
               <button
                 onClick={handleClose}
                 className="w-full py-4 rounded-xl bg-secondary hover:bg-secondary/80 
@@ -443,8 +404,8 @@ const CheckoutModal = ({ isOpen, onClose, quantity, totalPrice, selectedNumbers 
               >
                 Fechar
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </motion.div>
       </motion.div>
     </AnimatePresence>
