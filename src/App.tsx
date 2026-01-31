@@ -10,6 +10,7 @@ import FAQ from "./pages/FAQ";
 import Termos from "./pages/Termos";
 import Privacidade from "./pages/Privacidade";
 import MinhasCotas from "./pages/MinhasCotas";
+import Login from "./pages/Login";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +26,8 @@ const App = () => (
           <Route path="/faq" element={<FAQ />} />
           <Route path="/termos" element={<Termos />} />
           <Route path="/privacidade" element={<Privacidade />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/minhas-cotas" element={<MinhasCotas />} />
           <Route path="/minhas-cotas/:token" element={<MinhasCotas />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

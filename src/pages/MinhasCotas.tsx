@@ -1,156 +1,114 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Link, useParams } from 'react-router-dom';
-import { Ticket, Calendar, Trophy, Share2, Check, Clock, AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Ticket, Calendar, Trophy, LogOut, AlertCircle, Check } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import QuotaTicket from '@/components/QuotaTicket';
 
-interface QuotaData {
+interface UserSession {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+}
+
+interface Transaction {
+  id: string;
+  amount: number;
+  quantity: number;
+  status: string;
+  created_at: string;
+  raffle_id: string;
+}
+
+interface Quota {
   id: string;
   number: string;
   status: string;
 }
 
-interface SessionData {
-  user: {
-    name: string;
-    email: string;
-  };
-  transaction: {
-    amount: number;
-    quantity: number;
-    status: string;
-    created_at: string;
-  };
-  raffle: {
-    name: string;
-    prize: string;
-    draw_date: string;
-    draw_method: string;
-  };
-  quotas: QuotaData[];
-}
-
 const MinhasCotas = () => {
-  const { token } = useParams<{ token: string }>();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [sessionData, setSessionData] = useState<SessionData | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [user, setUser] = useState<UserSession | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [quotas, setQuotas] = useState<Quota[]>([]);
+  const [raffleInfo, setRaffleInfo] = useState<any>(null);
 
   useEffect(() => {
-    const fetchSessionData = async () => {
-      if (!token) {
-        setError('Token de acesso não fornecido.');
-        setLoading(false);
+    checkSession();
+  }, []);
+
+  const checkSession = async () => {
+    try {
+      // Verificar sessão no localStorage
+      const sessionData = localStorage.getItem('user_session');
+      
+      if (!sessionData) {
+        navigate('/login');
         return;
       }
 
-      try {
-        // Buscar sessão pelo token
-        const { data: session, error: sessionError } = await supabase
-          .from('customer_sessions')
-          .select('*, users(*)')
-          .eq('access_token', token)
+      const userSession: UserSession = JSON.parse(sessionData);
+      setUser(userSession);
+
+      // Buscar transações do usuário
+      const { data: transData, error: transError } = await supabase
+        .table('transactions')
+        .select('*')
+        .eq('user_id', userSession.id)
+        .order('created_at', { ascending: false });
+
+      if (transError) throw transError;
+
+      setTransactions(transData || []);
+
+      // Buscar cotas do usuário
+      const { data: quotasData, error: quotasError } = await supabase
+        .table('quotas')
+        .select('*')
+        .eq('user_id', userSession.id);
+
+      if (quotasError) throw quotasError;
+
+      setQuotas(quotasData || []);
+
+      // Buscar informações da rifa
+      if (transData && transData.length > 0) {
+        const { data: raffleData, error: raffleError } = await supabase
+          .table('raffle_configs')
+          .select('*')
+          .eq('id', transData[0].raffle_id)
           .single();
 
-        if (sessionError || !session) {
-          setError('Sessão não encontrada ou expirada.');
-          setLoading(false);
-          return;
+        if (!raffleError && raffleData) {
+          setRaffleInfo(raffleData);
         }
-
-        // Buscar transações do usuário
-        const { data: transactions, error: transError } = await supabase
-          .from('transactions')
-          .select('*, raffle_configs(*)')
-          .eq('user_id', session.user_id)
-          .order('created_at', { ascending: false })
-          .limit(1);
-
-        if (transError || !transactions || transactions.length === 0) {
-          setError('Nenhuma transação encontrada.');
-          setLoading(false);
-          return;
-        }
-
-        const transaction = transactions[0];
-
-        // Buscar cotas do usuário
-        const { data: quotas, error: quotasError } = await supabase
-          .from('quotas')
-          .select('*')
-          .eq('user_id', session.user_id)
-          .eq('transaction_id', transaction.id);
-
-        if (quotasError) {
-          console.error('Error fetching quotas:', quotasError);
-        }
-
-        // Montar dados da sessão
-        const userData = session.users as unknown as { name: string; email: string };
-        const raffleData = transaction.raffle_configs as unknown as {
-          name: string;
-          prize: string;
-          draw_date: string;
-          draw_method: string;
-        };
-
-        setSessionData({
-          user: {
-            name: userData?.name || 'Participante',
-            email: userData?.email || '',
-          },
-          transaction: {
-            amount: transaction.amount,
-            quantity: transaction.quantity,
-            status: transaction.status,
-            created_at: transaction.created_at || '',
-          },
-          raffle: {
-            name: raffleData?.name || 'Sorteio',
-            prize: raffleData?.prize || 'Prêmio',
-            draw_date: raffleData?.draw_date || '',
-            draw_method: raffleData?.draw_method || 'Loteria Federal',
-          },
-          quotas: quotas || [],
-        });
-      } catch (err) {
-        console.error('Error:', err);
-        setError('Erro ao carregar seus dados.');
-      } finally {
-        setLoading(false);
       }
-    };
-
-    fetchSessionData();
-  }, [token]);
-
-  const handleShare = async () => {
-    const shareUrl = window.location.href;
-    
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Minhas Cotas - SamVyt Prêmios',
-          text: 'Confira minhas cotas no sorteio!',
-          url: shareUrl,
-        });
-      } catch (err) {
-        console.log('Share cancelled');
-      }
-    } else {
-      await navigator.clipboard.writeText(shareUrl);
-      setCopied(true);
+    } catch (error) {
+      console.error('Session error:', error);
       toast({
-        title: 'Link copiado!',
-        description: 'Cole onde quiser para compartilhar.',
+        title: 'Erro ao carregar dados',
+        description: 'Tente fazer login novamente',
+        variant: 'destructive',
       });
-      setTimeout(() => setCopied(false), 2000);
+      navigate('/login');
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('user_session');
+    toast({
+      title: 'Logout realizado',
+      description: 'Até logo!',
+    });
+    navigate('/');
   };
 
   const formatDate = (dateString: string) => {
@@ -159,8 +117,6 @@ const MinhasCotas = () => {
       day: '2-digit',
       month: 'long',
       year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
     });
   };
 
@@ -176,7 +132,8 @@ const MinhasCotas = () => {
       case 'paid':
       case 'completed':
         return (
-          <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-500 border border-green-500/30">
+          <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-500 border border-green-500/30 flex items-center gap-1">
+            <Check className="w-3 h-3" />
             Confirmado
           </span>
         );
@@ -206,52 +163,36 @@ const MinhasCotas = () => {
     );
   }
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        
-        <div className="flex items-center justify-center min-h-[60vh] px-4">
-          <div className="text-center max-w-md">
-            <AlertCircle className="w-16 h-16 text-destructive mx-auto mb-4" />
-            <h1 className="text-2xl font-display font-bold mb-2">Ops! Algo deu errado</h1>
-            <p className="text-muted-foreground mb-6">{error}</p>
-            <Link
-              to="/"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-medium"
-            >
-              Ir para o início
-            </Link>
-          </div>
-        </div>
-        
-        <Footer />
-      </div>
-    );
+  if (!user) {
+    return null;
   }
+
+  const totalPaid = transactions
+    .filter(t => t.status === 'paid' || t.status === 'completed')
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const paidQuotas = quotas.filter(q => q.status === 'sold' || q.status === 'reserved');
+  const quotaNumbers = paidQuotas.map(q => q.number);
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
       
-      {/* Share button bar */}
-      <div className="border-b border-border/50 py-3 px-4">
-        <div className="container mx-auto flex justify-end">
+      {/* User Header */}
+      <div className="border-b border-border/50 py-4 px-4">
+        <div className="container mx-auto flex justify-between items-center">
+          <div>
+            <h2 className="font-display font-bold text-lg">
+              Olá, <span className="gradient-text">{user.name.split(' ')[0]}</span>!
+            </h2>
+            <p className="text-sm text-muted-foreground">{user.email}</p>
+          </div>
           <button
-            onClick={handleShare}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-secondary hover:bg-secondary/80 transition-colors"
+            onClick={handleLogout}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-secondary hover:bg-secondary/80 transition-colors text-sm"
           >
-            {copied ? (
-              <>
-                <Check className="w-4 h-4 text-green-500" />
-                <span className="text-sm">Copiado!</span>
-              </>
-            ) : (
-              <>
-                <Share2 className="w-4 h-4" />
-                <span className="text-sm">Compartilhar</span>
-              </>
-            )}
+            <LogOut className="w-4 h-4" />
+            Sair
           </button>
         </div>
       </div>
@@ -261,128 +202,163 @@ const MinhasCotas = () => {
         <div className="absolute inset-0 particle-bg" />
         <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
         
-        <div className="container mx-auto max-w-2xl relative z-10">
-          {/* Welcome */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-8"
-          >
-            <h1 className="text-3xl md:text-4xl font-display font-bold mb-2">
-              Olá, <span className="gradient-text">{sessionData?.user.name.split(' ')[0]}</span>!
-            </h1>
-            <p className="text-muted-foreground">
-              Aqui estão suas cotas para o sorteio
-            </p>
-          </motion.div>
+        <div className="container mx-auto max-w-4xl relative z-10">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="p-6 rounded-2xl bg-card/50 border border-border"
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <Ticket className="w-5 h-5 text-primary" />
+                <p className="text-sm text-muted-foreground">Total de Cotas</p>
+              </div>
+              <p className="text-3xl font-display font-bold gradient-text">
+                {quotas.length}
+              </p>
+            </motion.div>
 
-          {/* Status Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="p-6 rounded-2xl bg-card/50 border border-border mb-6"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-display font-bold text-lg">Status do Pedido</h2>
-              {getStatusBadge(sessionData?.transaction.status || 'pending')}
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="text-muted-foreground">Quantidade</p>
-                <p className="font-bold text-lg">{sessionData?.transaction.quantity} cotas</p>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="p-6 rounded-2xl bg-card/50 border border-border"
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <Check className="w-5 h-5 text-green-500" />
+                <p className="text-sm text-muted-foreground">Cotas Pagas</p>
               </div>
-              <div>
-                <p className="text-muted-foreground">Valor pago</p>
-                <p className="font-bold text-lg gradient-text">
-                  {formatCurrency(sessionData?.transaction.amount || 0)}
-                </p>
+              <p className="text-3xl font-display font-bold text-green-500">
+                {paidQuotas.length}
+              </p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="p-6 rounded-2xl bg-card/50 border border-border"
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <Trophy className="w-5 h-5 text-amber-500" />
+                <p className="text-sm text-muted-foreground">Total Investido</p>
               </div>
-            </div>
-          </motion.div>
+              <p className="text-3xl font-display font-bold text-amber-500">
+                {formatCurrency(totalPaid)}
+              </p>
+            </motion.div>
+          </div>
 
           {/* Raffle Info */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="p-6 rounded-2xl bg-primary/10 border border-primary/20 mb-6"
-          >
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
-                <Trophy className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <h3 className="font-display font-bold text-lg mb-1">
-                  {sessionData?.raffle.name}
-                </h3>
-                <p className="text-sm text-muted-foreground mb-3">
-                  Prêmio: <span className="text-foreground font-medium">{sessionData?.raffle.prize}</span>
-                </p>
-                <div className="flex items-center gap-4 text-xs">
-                  <div className="flex items-center gap-1">
-                    <Calendar className="w-4 h-4 text-primary" />
-                    <span>{formatDate(sessionData?.raffle.draw_date || '')}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Clock className="w-4 h-4 text-primary" />
-                    <span>{sessionData?.raffle.draw_method}</span>
+          {raffleInfo && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="p-6 rounded-2xl bg-primary/10 border border-primary/20 mb-8"
+            >
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+                  <Trophy className="w-6 h-6 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-display font-bold text-lg mb-1">
+                    {raffleInfo.name}
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Prêmio: <span className="text-foreground font-medium">{raffleInfo.prize}</span>
+                  </p>
+                  <div className="flex items-center gap-4 text-xs">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="w-4 h-4 text-primary" />
+                      <span>Sorteio: {formatDate(raffleInfo.draw_date)}</span>
+                    </div>
+                    <div className="px-2 py-1 rounded-md bg-primary/20 text-primary font-medium">
+                      {raffleInfo.draw_method}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          )}
 
-          {/* Quotas List */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <div className="flex items-center gap-2 mb-4">
-              <Ticket className="w-5 h-5 text-primary" />
-              <h2 className="font-display font-bold text-lg">Seus Números</h2>
-            </div>
-            
-            {sessionData?.quotas && sessionData.quotas.length > 0 ? (
-              <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2">
-                {sessionData.quotas.map((quota, index) => (
-                  <motion.div
-                    key={quota.id}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.3 + index * 0.02 }}
-                    className="aspect-square rounded-xl bg-card border border-border
-                             flex items-center justify-center font-display font-bold
-                             text-sm hover:border-primary/50 hover:bg-primary/5 transition-colors"
+          {/* Quotas Display */}
+          {paidQuotas.length > 0 ? (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <h2 className="text-2xl font-display font-bold mb-4 flex items-center gap-2">
+                <Ticket className="w-6 h-6 text-primary" />
+                Seus Números da Sorte
+              </h2>
+              <QuotaTicket numbers={quotaNumbers} className="mb-6" />
+              <p className="text-sm text-muted-foreground text-center">
+                Guarde bem seus números! Boa sorte! 🍀
+              </p>
+            </motion.div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="text-center py-12"
+            >
+              <AlertCircle className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-50" />
+              <h3 className="text-xl font-display font-bold mb-2">
+                Nenhuma cota confirmada ainda
+              </h3>
+              <p className="text-muted-foreground mb-6">
+                Complete o pagamento para ver seus números da sorte
+              </p>
+              <button
+                onClick={() => navigate('/')}
+                className="px-6 py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
+              >
+                Comprar mais cotas
+              </button>
+            </motion.div>
+          )}
+
+          {/* Transactions History */}
+          {transactions.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="mt-12"
+            >
+              <h2 className="text-2xl font-display font-bold mb-4">
+                Histórico de Compras
+              </h2>
+              <div className="space-y-3">
+                {transactions.map((transaction) => (
+                  <div
+                    key={transaction.id}
+                    className="p-4 rounded-xl bg-card/50 border border-border flex items-center justify-between"
                   >
-                    {quota.number.toString().padStart(5, '0')}
-                  </motion.div>
+                    <div>
+                      <p className="font-medium">{transaction.quantity} cotas</p>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(transaction.created_at).toLocaleDateString('pt-BR')}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold gradient-text mb-1">
+                        {formatCurrency(transaction.amount)}
+                      </p>
+                      {getStatusBadge(transaction.status)}
+                    </div>
+                  </div>
                 ))}
               </div>
-            ) : (
-              <div className="p-8 rounded-2xl bg-card/50 border border-border text-center">
-                <Ticket className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">
-                  Seus números serão exibidos aqui após a confirmação do pagamento.
-                </p>
-              </div>
-            )}
-          </motion.div>
-
-          {/* Help Text */}
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="text-center text-xs text-muted-foreground mt-8"
-          >
-            Guarde este link! Você pode acessá-lo a qualquer momento para ver seus números.
-          </motion.p>
+            </motion.div>
+          )}
         </div>
       </section>
-
+      
       <Footer />
     </div>
   );

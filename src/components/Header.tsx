@@ -55,7 +55,7 @@ const Header = () => {
                 </NavLink>
               ))}
               <NavLink
-                to="/minhas-cotas"
+                to="/login"
                 className="ml-2 px-4 py-2 rounded-lg text-sm font-heading font-semibold border border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-200 tracking-wide"
                 activeClassName="bg-primary text-primary-foreground"
               >
@@ -120,11 +120,11 @@ const Header = () => {
 
                   {/* Minhas Cotas - Destacado */}
                   <Link
-                    to="/minhas-cotas"
+                    to="/login"
                     onClick={closeMenu}
                     className={cn(
                       'flex items-center gap-4 px-4 py-4 rounded-xl font-heading font-bold text-base border-2 transition-all duration-200 tracking-wide',
-                      location.pathname.startsWith('/minhas-cotas')
+                      location.pathname.startsWith('/login') || location.pathname.startsWith('/minhas-cotas')
                         ? 'bg-primary text-primary-foreground border-primary shadow-[0_0_20px_hsl(187_100%_50%_/_0.3)]'
                         : 'border-primary/50 text-primary hover:bg-primary hover:text-primary-foreground hover:shadow-[0_0_20px_hsl(187_100%_50%_/_0.3)]'
                     )}
