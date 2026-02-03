@@ -44,26 +44,27 @@ serve(async (req) => {
     // 1. Buscar transação
     const { data: transaction, error: transactionError } = await supabaseClient
       .from('transactions')
-      .select('*, quotas(*)')
+      .select('*')
       .eq('id', transactionId)
       .single()
 
     if (transactionError || !transaction) {
-      console.error('Transaction not found:', transactionId)
+      console.error('Transaction not found:', transactionId, 'Error:', transactionError)
       return new Response(
-        JSON.stringify({ error: 'Transaction not found' }),
+        JSON.stringify({ error: 'Transaction not found', details: transactionError }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+
+    console.log('Found transaction:', transaction.id, 'user_id:', transaction.user_id)
 
     // 2. Atualizar transação como paga
     const { error: updateError } = await supabaseClient
       .from('transactions')
       .update({
         status: 'paid',
-        paid_at: new Date().toISOString(),
         external_payment_id: payload.invoice_slug,
-        pix_code: payload.transaction_nsu,
+        updated_at: new Date().toISOString(),
       })
       .eq('id', transactionId)
 
