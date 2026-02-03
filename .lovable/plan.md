@@ -1,72 +1,95 @@
 
-# Plano: Corrigir Políticas RLS para Checkout InfinitePay
+# Plano: Correção do Checkout InfinitePay
 
-## Problema Identificado
+## Diagnóstico Realizado
 
-O teste de checkout falhou com erros **406** e **401** porque as políticas de segurança (RLS) do banco de dados estão bloqueando operações necessárias para o checkout anônimo.
+Após análise detalhada do fluxo de checkout, identifiquei que:
 
-### Erros encontrados:
-```
-[Checkout] Criando/buscando usuário...
-Error 406: GET /users?select=id&email=eq.teste@samvyt.com (SELECT negado)
-Error 401: POST /users?select=id (INSERT retornando dados negado)
-```
+1. **Criação de usuários funciona** - 5 usuários foram criados com sucesso no banco
+2. **Nenhuma transação foi criada** - todas as tentativas falharam com erro RLS
+3. **As políticas RLS foram aplicadas** - mas podem não estar em efeito ainda
 
-## Causa Raiz
+### Problema Identificado
 
-A tabela `users` só permite:
-- **INSERT**: anônimos podem inserir (OK)
-- **SELECT**: apenas usuários autenticados podem ver seu próprio perfil (PROBLEMA)
+O erro "new row violates row-level security policy for table transactions" indica que o PostgreSQL está rejeitando o INSERT, mesmo com a política `"Criar transacoes checkout"` configurada corretamente.
 
-O código do checkout precisa:
-1. Verificar se email já existe (SELECT) - Bloqueado para anon
-2. Inserir novo usuário (INSERT) - OK
-3. Retornar o ID do usuário inserido (SELECT após INSERT) - Bloqueado
+**Possíveis causas:**
+- Cache do PostgREST não atualizou após a migração
+- Conflito entre políticas PERMISSIVE/RESTRICTIVE (improvável, mas verificaremos)
 
-## Solução
+---
 
-Adicionar política que permite SELECT na tabela `users` apenas pelo email durante o checkout.
+## Solução Proposta
 
-### Detalhes Técnicos
+### Etapa 1: Forçar Atualização do Cache RLS
 
-**Nova migration SQL:**
+Vou criar uma nova migração que:
+1. Remove TODAS as políticas de INSERT da tabela `transactions`
+2. Recria a política com configuração garantidamente correta
+3. Adiciona um `NOTIFY` para forçar atualização do cache
+
+### Etapa 2: Simplificar o Fluxo de Checkout  
+
+Vou adicionar logs mais detalhados no código para identificar exatamente onde o erro ocorre.
+
+### Etapa 3: Testar com Browser Tool
+
+Após as correções, vou testar o checkout automaticamente para garantir que funciona.
+
+---
+
+## Mudanças Técnicas
+
+### 1. Migração SQL
 
 ```sql
--- Permitir buscar usuário por email durante checkout
--- Isso é seguro pois só retorna o ID, não dados sensíveis
-CREATE POLICY "Buscar usuario por email no checkout" ON public.users
-  FOR SELECT TO anon
-  USING (true);
+-- Remover políticas de INSERT existentes
+DROP POLICY IF EXISTS "Criar transacoes" ON public.transactions;
+DROP POLICY IF EXISTS "Criar transacoes checkout" ON public.transactions;
 
--- Permitir reservar cotas durante checkout
-CREATE POLICY "Reservar cotas no checkout" ON public.quotas
-  FOR UPDATE TO anon, authenticated
-  USING (status = 'available')
-  WITH CHECK (status IN ('available', 'reserved'));
+-- Recriar política limpa
+CREATE POLICY "Permitir checkout anonimo" ON public.transactions
+  FOR INSERT 
+  TO anon, authenticated
+  WITH CHECK (true);
 
--- Permitir criar associações transaction_quotas
-CREATE POLICY "Criar associacoes checkout" ON public.transaction_quotas
-  FOR INSERT TO anon, authenticated
+-- Notificar PostgREST para recarregar schema
+NOTIFY pgrst, 'reload schema';
+```
+
+### 2. Melhoria no código (checkout.ts)
+
+- Adicionar log detalhado do erro exato retornado pelo Supabase
+- Verificar se o `user_id` está correto antes de inserir
+- Adicionar fallback para retry em caso de erro
+
+### 3. Adicionar política de UPDATE (opcional)
+
+Para o passo 9 do checkout (salvar `external_payment_id`), precisamos permitir UPDATE:
+
+```sql
+CREATE POLICY "Atualizar transacao apos criacao" ON public.transactions
+  FOR UPDATE 
+  TO anon, authenticated
+  USING (true)
   WITH CHECK (true);
 ```
 
-## Arquivo a Modificar
+---
 
-Criar nova migration em:
-`supabase/migrations/[timestamp]_fix_checkout_rls_policies.sql`
+## Arquivos a Modificar
 
-## Impacto
+| Arquivo | Mudança |
+|---------|---------|
+| Nova migração SQL | Recriar políticas RLS |
+| `src/services/checkout.ts` | Melhorar tratamento de erro |
 
-Após aplicar a migration:
-- O checkout funcionará corretamente
-- Usuários anônimos poderão completar compras
-- A chave `samvyt10` do InfinitePay será usada para gerar links de pagamento
-- Os pagamentos serão processados via PIX ou Cartão
+---
 
-## Configuração do InfinitePay (Já Confirmado)
+## Resultado Esperado
 
-A chave/handle `samvyt10` já está corretamente configurada em:
-- `.env`: `VITE_INFINITEPAY_HANDLE="samvyt10"`
-- `src/services/checkout.ts`: Usa a variável com fallback
+Após implementar estas correções:
+1. O checkout criará a transação com sucesso
+2. O link do InfinitePay será gerado corretamente
+3. O usuário será redirecionado para `https://pay.infinitepay.io/@samvyt10?amount=X&description=Y`
 
-O problema atual é apenas nas políticas RLS do banco de dados.
