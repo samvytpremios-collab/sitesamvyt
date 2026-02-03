@@ -376,10 +376,25 @@ const QuotaSelector = () => {
       }} viewport={{
         once: true
       }}>
-          <SolidButton onClick={() => setIsCheckoutOpen(true)} className="w-full" size="lg" variant="primary" disabled={stats.available === 0}>
+          <SolidButton 
+            onClick={() => setIsCheckoutOpen(true)} 
+            className="w-full" 
+            size="lg" 
+            variant="primary" 
+            disabled={stats.available === 0 || selectedNumbers.length === 0 || selectedNumbers.length !== quantity}
+          >
             <ShoppingCart className="w-5 h-5" />
-            {selectedNumbers.length > 0 ? 'Comprar estas Cotas' : 'Finalizar Compra'}
+            {selectedNumbers.length > 0 && selectedNumbers.length === quantity
+              ? `Comprar ${selectedNumbers.length} Cotas` 
+              : 'Selecione as cotas acima'}
           </SolidButton>
+          
+          {/* Helper message when no quotas selected */}
+          {(selectedNumbers.length === 0 || selectedNumbers.length !== quantity) && (
+            <p className="text-center text-xs text-muted-foreground mt-2">
+              Clique em "Selecionar cotas aleatórias" acima para continuar
+            </p>
+          )}
         </motion.div>
 
         {/* Trust Indicators */}
