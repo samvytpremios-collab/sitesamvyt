@@ -1,100 +1,113 @@
 
-# Corrigir Webhook do InfinitePay - Cotas Não Atualizam
+# Corrigir Sistema de Cotas - Reserva, Confirmação e Liberação
 
-## Problema Identificado
+## Resumo do Problema
 
-O webhook do InfinitePay **falha** ao processar o pagamento porque tenta atualizar colunas que não existem na tabela `transactions`:
+O sistema tem 3 problemas críticos:
+1. Cotas **não são reservadas** durante o checkout
+2. O **webhook não está recebendo** notificações do InfinitePay
+3. **Não há liberação automática** de cotas não pagas
 
-- `paid_at` - **não existe**
-- `pix_code` - **não existe**
+## Correções Necessárias
 
-### Evidência nos Logs
+### 1. Reservar Cotas Durante o Checkout
 
-```
-ERROR: Transaction not found: b83c14db-a446-411b-9791-1f1a436778a8
-```
+**Arquivo:** `src/services/checkout.ts`
 
-Na verdade, a transação existe! O erro real é que a query com `*, quotas(*)` está falhando porque a relação direta não existe.
+Após criar a transação, atualizar as cotas selecionadas para status `reserved`:
 
-## Solução
-
-### 1. Corrigir o Webhook (`infinitepay-webhook/index.ts`)
-
-Remover as colunas inexistentes e corrigir a lógica:
-
-**Antes:**
 ```typescript
-// Query com relação que não existe
-.select('*, quotas(*)')
-
-// Colunas que não existem
-.update({
-  status: 'paid',
-  paid_at: new Date().toISOString(),
-  external_payment_id: payload.invoice_slug,
-  pix_code: payload.transaction_nsu,
-})
+// Após inserir na tabela transaction_quotas
+// Atualizar status das cotas para 'reserved'
+await supabase
+  .from('quotas')
+  .update({ 
+    status: 'reserved',
+    transaction_id: transaction.id,
+    updated_at: new Date().toISOString()
+  })
+  .in('id', quotaIds)
 ```
 
-**Depois:**
+### 2. Configurar Webhook no InfinitePay
+
+O InfinitePay precisa ser configurado para enviar notificações para:
+```
+https://[SEU_PROJETO].supabase.co/functions/v1/infinitepay-webhook
+```
+
+Você precisará:
+1. Acessar o painel do InfinitePay
+2. Configurar a URL do webhook nas configurações
+
+### 3. Criar Função para Liberar Cotas Expiradas
+
+**Nova função:** `supabase/functions/release-expired-quotas/index.ts`
+
+Esta função será chamada periodicamente (via cron ou manualmente) para:
+- Buscar transações `pending` que expiraram
+- Atualizar cotas associadas para `available`
+- Marcar transações como `expired`
+
 ```typescript
-// Query simples
-.select('*')
-
-// Apenas colunas que existem
-.update({
-  status: 'paid',
-  external_payment_id: payload.invoice_slug,
-  updated_at: new Date().toISOString(),
-})
+// Lógica principal:
+// 1. Buscar transações pending onde expires_at < now()
+// 2. Buscar cotas associadas via transaction_quotas
+// 3. Atualizar cotas para status: 'available', user_id: null
+// 4. Atualizar transações para status: 'expired'
 ```
 
-### 2. Deploy da Edge Function
+### 4. Adicionar Política RLS para UPDATE nas Cotas
 
-Após a correção, fazer deploy da função atualizada.
+**Migração SQL necessária:**
 
-### 3. Corrigir Dados Existentes (Opcional)
+A política atual só permite UPDATE de `available` → `reserved`. Precisamos permitir que o service_role (usado pelo webhook) também possa fazer `reserved` → `sold`.
 
-Atualizar manualmente a cota do pagamento de teste que já foi feito:
+## Arquivos a Modificar
 
-```sql
--- Atualizar transação como paga
-UPDATE transactions 
-SET status = 'paid', external_payment_id = 'ihmhRYzj5'
-WHERE id = 'b83c14db-a446-411b-9791-1f1a436778a8';
+| Arquivo | Alteração |
+|---------|-----------|
+| `src/services/checkout.ts` | Adicionar reserva de cotas |
+| `supabase/functions/release-expired-quotas/index.ts` | Nova função para liberar cotas |
+| Migração SQL | Atualizar política RLS |
 
--- Atualizar cota como vendida
-UPDATE quotas 
-SET status = 'sold', 
-    user_id = 'bc6abe13-0765-4876-bf7a-bc254684469e',
-    purchase_date = now()
-WHERE id = '63829a3b-1487-4359-ba3e-1d0b22cf0d62';
+## Fluxo Corrigido
+
+```
+Cliente seleciona cotas
+        ↓
+   Cotas: available → reserved
+        ↓
+   Redireciona para InfinitePay
+        ↓
+    Pagamento concluído
+        ↓
+   Webhook recebe notificação
+        ↓
+   Cotas: reserved → sold
+        ↓
+   Transação: pending → paid
 ```
 
-## Resultado Esperado
+## Fluxo de Expiração
 
-Após a correção:
-- O webhook irá processar pagamentos corretamente
-- As cotas serão marcadas como `sold` e associadas ao `user_id`
-- O painel "Minhas Cotas" mostrará as cotas pagas
+```
+   Cotas: reserved (30 min)
+        ↓
+   Pagamento não concluído
+        ↓
+   Função de liberação roda
+        ↓
+   Cotas: reserved → available
+        ↓
+   Transação: pending → expired
+```
 
-## Detalhes Técnicos
+## Observação Importante
 
-### Arquivo a modificar
-`supabase/functions/infinitepay-webhook/index.ts`
+Você precisa configurar o webhook no painel do InfinitePay para que ele notifique seu sistema quando um pagamento for concluído. Sem essa configuração, o sistema nunca saberá que o pagamento foi feito.
 
-### Colunas disponíveis na tabela `transactions`
-| Coluna | Existe |
-|--------|--------|
-| id | ✅ |
-| status | ✅ |
-| external_payment_id | ✅ |
-| updated_at | ✅ |
-| paid_at | ❌ |
-| pix_code | ❌ |
-
-### Mudanças no código
-
-1. **Linha 47**: Remover `quotas(*)` da query
-2. **Linha 63-67**: Remover `paid_at` e `pix_code` do update
-3. Adicionar melhor log de erros para debug
+A URL do webhook é:
+```
+https://pgfrhweuqvstezueqcrf.supabase.co/functions/v1/infinitepay-webhook
+```
