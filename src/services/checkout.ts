@@ -2,8 +2,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { createCheckoutLink, toCents, type InfinitePayItem } from './infinitepay';
 
 // Configuração - deve ser movida para variáveis de ambiente
-const INFINITEPAY_HANDLE = import.meta.env.VITE_INFINITEPAY_HANDLE || '';
+const INFINITEPAY_HANDLE = import.meta.env.VITE_INFINITEPAY_HANDLE || 'samvyt10';
 const SITE_URL = import.meta.env.VITE_SITE_URL || window.location.origin;
+
+// Log para debug
+if (!import.meta.env.VITE_INFINITEPAY_HANDLE) {
+  console.warn('VITE_INFINITEPAY_HANDLE não configurada, usando fallback: samvyt10');
+}
 
 export interface CustomerData {
   name: string;
@@ -106,6 +111,8 @@ async function getOrCreateUser(customerData: CustomerData): Promise<string> {
  */
 export async function processCheckout(data: CheckoutData): Promise<CheckoutResult> {
   try {
+    console.log('[Checkout] Iniciando processamento...', { raffleId: data.raffleId, quantity: data.quantity });
+    
     // 1. Buscar configuração da rifa
     const { data: raffle, error: raffleError } = await supabase
       .from('raffle_configs')
@@ -114,19 +121,27 @@ export async function processCheckout(data: CheckoutData): Promise<CheckoutResul
       .single();
 
     if (raffleError || !raffle) {
+      console.error('[Checkout] Erro ao buscar rifa:', raffleError);
       return { success: false, error: 'Rifa não encontrada' };
     }
 
+    console.log('[Checkout] Rifa encontrada:', raffle.name);
+    
     // 2. Criar ou buscar usuário
+    console.log('[Checkout] Criando/buscando usuário...');
     const userId = await getOrCreateUser(data.customerData);
+    console.log('[Checkout] Usuário:', userId);
 
     // 3. Selecionar cotas aleatórias
+    console.log('[Checkout] Selecionando cotas aleatórias...');
     const quotaIds = await selectRandomQuotas(data.raffleId, data.quantity);
+    console.log('[Checkout] Cotas selecionadas:', quotaIds.length);
 
     // 4. Criar transação
     const totalAmount = raffle.price_per_quota * data.quantity;
     const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 minutos
 
+    console.log('[Checkout] Criando transação...', { totalAmount, quantity: data.quantity });
     const { data: transaction, error: transactionError } = await supabase
       .from('transactions')
       .insert({
@@ -142,6 +157,7 @@ export async function processCheckout(data: CheckoutData): Promise<CheckoutResul
       .single();
 
     if (transactionError || !transaction) {
+      console.error('[Checkout] Erro ao criar transação:', transactionError);
       return { success: false, error: 'Erro ao criar transação' };
     }
 
@@ -157,6 +173,7 @@ export async function processCheckout(data: CheckoutData): Promise<CheckoutResul
     await supabase.from('transaction_quotas').insert(quotaAssociations);
 
     // 7. Criar link de pagamento no InfinitePay
+    console.log('[Checkout] Criando link de pagamento InfinitePay...');
     const items: InfinitePayItem[] = [
       {
         quantity: data.quantity,
@@ -165,6 +182,7 @@ export async function processCheckout(data: CheckoutData): Promise<CheckoutResul
       },
     ];
 
+    console.log('[Checkout] InfinitePay Handle:', INFINITEPAY_HANDLE);
     const checkoutResponse = await createCheckoutLink({
       handle: INFINITEPAY_HANDLE,
       items,
@@ -178,7 +196,10 @@ export async function processCheckout(data: CheckoutData): Promise<CheckoutResul
       webhook_url: `${SITE_URL}/api/webhook/infinitepay`,
     });
 
+    console.log('[Checkout] Resposta InfinitePay:', checkoutResponse);
+    
     if (!checkoutResponse.success || !checkoutResponse.link) {
+      console.error('[Checkout] Erro ao criar link InfinitePay:', checkoutResponse.error);
       return {
         success: false,
         error: checkoutResponse.error || 'Erro ao gerar link de pagamento',
@@ -191,13 +212,14 @@ export async function processCheckout(data: CheckoutData): Promise<CheckoutResul
       .update({ external_payment_id: checkoutResponse.link })
       .eq('id', transaction.id);
 
+    console.log('[Checkout] Checkout concluído com sucesso!');
     return {
       success: true,
       transactionId: transaction.id,
       paymentLink: checkoutResponse.link,
     };
   } catch (error) {
-    console.error('Checkout error:', error);
+    console.error('[Checkout] ERRO FATAL:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erro ao processar checkout',
