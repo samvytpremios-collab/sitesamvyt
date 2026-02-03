@@ -109,20 +109,37 @@ export async function processCheckout(data: CheckoutData): Promise<CheckoutResul
       .single();
 
     if (raffleError || !raffle) {
+      console.error('[Checkout] Erro ao buscar rifa:', raffleError);
       return { success: false, error: 'Rifa não encontrada' };
     }
+    console.log('[Checkout] Rifa encontrada:', raffle.name);
 
     // 2. Criar ou buscar usuário
-    const userId = await getOrCreateUser(data.customerData);
+    let userId: string;
+    try {
+      userId = await getOrCreateUser(data.customerData);
+      console.log('[Checkout] Usuário:', userId);
+    } catch (userError) {
+      console.error('[Checkout] Erro ao criar/buscar usuário:', userError);
+      return { success: false, error: 'Erro ao processar dados do cliente' };
+    }
 
     // 3. Selecionar cotas aleatórias
-    const quotaIds = await selectRandomQuotas(data.raffleId, data.quantity);
+    let quotaIds: string[];
+    try {
+      quotaIds = await selectRandomQuotas(data.raffleId, data.quantity);
+      console.log('[Checkout] Cotas selecionadas:', quotaIds.length);
+    } catch (quotaError) {
+      console.error('[Checkout] Erro ao selecionar cotas:', quotaError);
+      return { success: false, error: 'Cotas insuficientes disponíveis' };
+    }
 
     // 4. Calcular valor total
     const totalAmount = raffle.price_per_quota * data.quantity;
     const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 minutos
 
     // 5. Criar transação
+    console.log('[Checkout] Criando transação...', { userId, amount: totalAmount, quantity: data.quantity });
     const { data: transaction, error: transactionError } = await supabase
       .from('transactions')
       .insert({
@@ -138,12 +155,24 @@ export async function processCheckout(data: CheckoutData): Promise<CheckoutResul
       .single();
 
     if (transactionError || !transaction) {
-      console.error('[Checkout] Erro ao criar transação:', transactionError);
-      return { success: false, error: 'Erro ao criar transação' };
+      console.error('[Checkout] Erro ao criar transação:', {
+        code: transactionError?.code,
+        message: transactionError?.message,
+        details: transactionError?.details,
+        hint: transactionError?.hint,
+      });
+      return { success: false, error: `Erro ao criar transação: ${transactionError?.message || 'Erro desconhecido'}` };
     }
+    console.log('[Checkout] Transação criada:', transaction.id);
 
     // 6. Reservar cotas
-    await reserveQuotas(quotaIds, transaction.id);
+    try {
+      await reserveQuotas(quotaIds, transaction.id);
+      console.log('[Checkout] Cotas reservadas');
+    } catch (reserveError) {
+      console.error('[Checkout] Erro ao reservar cotas:', reserveError);
+      // Continuar mesmo assim, pois a transação foi criada
+    }
 
     // 7. Criar associação transaction_quotas
     const quotaAssociations = quotaIds.map(quotaId => ({
@@ -151,7 +180,10 @@ export async function processCheckout(data: CheckoutData): Promise<CheckoutResul
       quota_id: quotaId,
     }));
 
-    await supabase.from('transaction_quotas').insert(quotaAssociations);
+    const { error: assocError } = await supabase.from('transaction_quotas').insert(quotaAssociations);
+    if (assocError) {
+      console.error('[Checkout] Erro ao criar associações:', assocError);
+    }
 
     // 8. Gerar link de pagamento InfinitePay (redirecionamento direto)
     const description = `${data.quantity}x Cotas - ${raffle.name}`;
@@ -161,14 +193,19 @@ export async function processCheckout(data: CheckoutData): Promise<CheckoutResul
       description,
       orderId: transaction.id,
     });
+    console.log('[Checkout] Link gerado:', paymentLink);
 
     // 9. Salvar link na transação
-    await supabase
+    const { error: updateError } = await supabase
       .from('transactions')
       .update({ external_payment_id: paymentLink })
       .eq('id', transaction.id);
+    
+    if (updateError) {
+      console.error('[Checkout] Erro ao salvar link:', updateError);
+    }
 
-    console.log('[Checkout] Sucesso! Link:', paymentLink);
+    console.log('[Checkout] Sucesso!');
     
     return {
       success: true,
@@ -176,7 +213,7 @@ export async function processCheckout(data: CheckoutData): Promise<CheckoutResul
       paymentLink,
     };
   } catch (error) {
-    console.error('[Checkout] Erro:', error);
+    console.error('[Checkout] Erro geral:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erro ao processar checkout',
