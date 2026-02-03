@@ -1,90 +1,60 @@
 
-# Validação de Seleção de Cotas Antes do Checkout
 
-## Situação Atual
+# Adicionar 13.000 Novas Cotas com Números Aleatórios
 
-O botão "Finalizar Compra" está sempre habilitado, permitindo que o usuário prossiga sem selecionar os números aleatórios primeiro. Isso pode causar confusão no fluxo.
+## Resumo
 
-## Solução Proposta
+Vou adicionar 13.000 novas cotas com números de 5 dígitos aleatórios (como `93692`, `04817`, `58321`) que não se repetem com os 17.000 já existentes.
 
-Adicionar validação que exige a seleção de cotas aleatórias antes de permitir o checkout.
+## Execução
 
----
+### Passo 1: Inserir 13.000 Novas Cotas
 
-## Mudanças no Componente
+Executar migração SQL que:
+1. Gera números de 00000 a 99999
+2. Remove os que já existem
+3. Embaralha aleatoriamente
+4. Seleciona 13.000 números únicos
+5. Insere na tabela `quotas`
 
-### Arquivo: `src/components/QuotaSelector.tsx`
+### Passo 2: Atualizar Configuração da Rifa
 
-**1. Desabilitar botão se não houver números selecionados:**
+Mudar `total_quotas` de 17.000 para 30.000
 
-```tsx
-// Linha ~379: Adicionar condição de desabilitado
-<SolidButton
-  onClick={() => setIsCheckoutOpen(true)}
-  className="w-full"
-  size="lg"
-  variant="primary"
-  disabled={stats.available === 0 || selectedNumbers.length === 0}
->
+## Resultado
+
+| Antes | Depois |
+|-------|--------|
+| 17.000 cotas | 30.000 cotas |
+| Números: 5 dígitos | Números: 5 dígitos |
+| Formato: `93692` | Formato: `93692` |
+
+## Detalhes Técnicos
+
+A migração SQL usará:
+
+```sql
+-- Inserir 13.000 novas cotas com números únicos
+INSERT INTO quotas (raffle_id, number, status)
+SELECT 
+  'bb2215ce-76e1-4307-95e3-4395e32579ed'::uuid,
+  LPAD(n::text, 5, '0'),
+  'available'
+FROM (
+  SELECT n FROM generate_series(0, 99999) AS n
+  WHERE LPAD(n::text, 5, '0') NOT IN (
+    SELECT number FROM quotas 
+    WHERE raffle_id = 'bb2215ce-76e1-4307-95e3-4395e32579ed'
+  )
+  ORDER BY random()
+  LIMIT 13000
+) AS new_numbers;
+
+-- Atualizar total_quotas na configuração
+UPDATE raffle_configs 
+SET total_quotas = 30000, updated_at = now()
+WHERE id = 'bb2215ce-76e1-4307-95e3-4395e32579ed';
 ```
 
-**2. Mudar texto do botão para indicar o passo necessário:**
+Após a execução, você terá 30.000 cotas disponíveis para venda.
 
-```tsx
-{selectedNumbers.length > 0 
-  ? `Comprar ${selectedNumbers.length} Cotas` 
-  : 'Selecione as cotas acima'}
-```
-
-**3. Adicionar feedback visual quando desabilitado:**
-
-Mostrar uma mensagem sutil abaixo do botão quando não houver cotas selecionadas:
-
-```tsx
-{selectedNumbers.length === 0 && (
-  <p className="text-center text-xs text-muted-foreground mt-2">
-    Clique em "Selecionar cotas aleatórias" acima para continuar
-  </p>
-)}
-```
-
----
-
-## Fluxo Atualizado
-
-| Etapa | Ação do Usuário | Estado do Botão |
-|-------|-----------------|-----------------|
-| 1 | Escolhe quantidade (ex: 10) | Desabilitado - "Selecione as cotas acima" |
-| 2 | Clica em "Selecionar 10 cotas aleatórias" | Animação de seleção |
-| 3 | Números aparecem no ticket | Habilitado - "Comprar 10 Cotas" |
-| 4 | Clica no botão | Abre modal de checkout |
-
----
-
-## Visual Esperado
-
-**Antes de selecionar:**
-- Botão com opacidade reduzida
-- Texto: "Selecione as cotas acima"
-- Mensagem de ajuda abaixo
-
-**Após selecionar:**
-- Botão com destaque total
-- Texto: "Comprar 10 Cotas"
-- Sem mensagem adicional
-
----
-
-## Validação Adicional
-
-Garantir que a quantidade de números selecionados corresponda à quantidade escolhida:
-
-```tsx
-disabled={
-  stats.available === 0 || 
-  selectedNumbers.length === 0 || 
-  selectedNumbers.length !== quantity
-}
-```
-
-Isso evita que o usuário altere a quantidade após selecionar e tente comprar com números inconsistentes.
