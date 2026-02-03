@@ -76,8 +76,8 @@ serve(async (req) => {
     }
     phone = '+' + phone
 
-    // Converter valor para centavos
-    const priceInCents = Math.round(body.amount * 100)
+    // Converter valor UNITÁRIO para centavos (amount é o total, dividir por quantity)
+    const unitPriceInCents = Math.round((body.amount / body.quantity) * 100)
 
     // Montar payload para InfinitePay
     const payload: InfinitePayPayload = {
@@ -93,7 +93,7 @@ serve(async (req) => {
       items: [
         {
           quantity: body.quantity,
-          price: priceInCents,
+          price: unitPriceInCents,
           description: body.description,
         },
       ],
