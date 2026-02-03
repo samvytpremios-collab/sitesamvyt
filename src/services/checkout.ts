@@ -22,6 +22,25 @@ export interface CheckoutResult {
 }
 
 /**
+ * Busca IDs das cotas pelos números selecionados pelo usuário
+ */
+async function getQuotaIdsByNumbers(raffleId: string, numbers: string[]): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('quotas')
+    .select('id, number')
+    .eq('raffle_id', raffleId)
+    .eq('status', 'available')
+    .in('number', numbers);
+
+  if (error) throw error;
+  if (!data || data.length !== numbers.length) {
+    throw new Error('Algumas cotas selecionadas não estão mais disponíveis');
+  }
+  
+  return data.map(q => q.id);
+}
+
+/**
  * Seleciona cotas aleatórias disponíveis
  */
 async function selectRandomQuotas(raffleId: string, quantity: number): Promise<string[]> {
@@ -121,14 +140,21 @@ export async function processCheckout(data: CheckoutData): Promise<CheckoutResul
       return { success: false, error: 'Erro ao processar dados do cliente' };
     }
 
-    // 3. Selecionar cotas aleatórias
+    // 3. Usar cotas selecionadas pelo usuário ou selecionar aleatoriamente
     let quotaIds: string[];
     try {
-      quotaIds = await selectRandomQuotas(data.raffleId, data.quantity);
-      console.log('[Checkout] Cotas selecionadas:', quotaIds.length);
+      if (data.selectedNumbers && data.selectedNumbers.length === data.quantity) {
+        console.log('[Checkout] Usando números selecionados pelo usuário:', data.selectedNumbers);
+        quotaIds = await getQuotaIdsByNumbers(data.raffleId, data.selectedNumbers);
+      } else {
+        console.log('[Checkout] Selecionando cotas aleatórias...');
+        quotaIds = await selectRandomQuotas(data.raffleId, data.quantity);
+      }
+      console.log('[Checkout] Cotas obtidas:', quotaIds.length);
     } catch (quotaError) {
-      console.error('[Checkout] Erro ao selecionar cotas:', quotaError);
-      return { success: false, error: 'Cotas insuficientes disponíveis' };
+      console.error('[Checkout] Erro ao obter cotas:', quotaError);
+      const errorMessage = quotaError instanceof Error ? quotaError.message : 'Cotas insuficientes disponíveis';
+      return { success: false, error: errorMessage };
     }
 
     // 4. Calcular valor total
