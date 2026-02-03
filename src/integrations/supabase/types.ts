@@ -136,6 +136,99 @@ export type Database = {
         }
         Relationships: []
       }
+      transaction_quotas: {
+        Row: {
+          created_at: string | null
+          id: string
+          quota_id: string
+          transaction_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          quota_id: string
+          transaction_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          quota_id?: string
+          transaction_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transaction_quotas_quota_id_fkey"
+            columns: ["quota_id"]
+            isOneToOne: false
+            referencedRelation: "quotas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transaction_quotas_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string | null
+          expires_at: string | null
+          external_payment_id: string | null
+          id: string
+          payment_method: string | null
+          quantity: number
+          raffle_id: string
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          expires_at?: string | null
+          external_payment_id?: string | null
+          id?: string
+          payment_method?: string | null
+          quantity: number
+          raffle_id: string
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          expires_at?: string | null
+          external_payment_id?: string | null
+          id?: string
+          payment_method?: string | null
+          quantity?: number
+          raffle_id?: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffle_configs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           created_at: string | null
