@@ -1,113 +1,92 @@
 
-# Corrigir Sistema de Cotas - Reserva, Confirmação e Liberação
+# Corrigir Sincronização de Números - Seleção vs Pagamento
 
-## Resumo do Problema
+## Problema Identificado
 
-O sistema tem 3 problemas críticos:
-1. Cotas **não são reservadas** durante o checkout
-2. O **webhook não está recebendo** notificações do InfinitePay
-3. **Não há liberação automática** de cotas não pagas
+O sistema está selecionando números **duas vezes**:
 
-## Correções Necessárias
+1. **Durante a seleção visual**: O usuário clica em "Selecionar cotas aleatórias" e vê o número **85755**
+2. **Durante o checkout**: O sistema **ignora** esse número e seleciona **novas cotas aleatórias**
 
-### 1. Reservar Cotas Durante o Checkout
+Por isso, o número mostrado na seleção é diferente do que aparece no painel após o pagamento.
 
-**Arquivo:** `src/services/checkout.ts`
+## Causa Raiz
 
-Após criar a transação, atualizar as cotas selecionadas para status `reserved`:
-
+No arquivo `src/services/checkout.ts`, linha 127:
 ```typescript
-// Após inserir na tabela transaction_quotas
-// Atualizar status das cotas para 'reserved'
-await supabase
-  .from('quotas')
-  .update({ 
-    status: 'reserved',
-    transaction_id: transaction.id,
-    updated_at: new Date().toISOString()
-  })
-  .in('id', quotaIds)
+// O problema está aqui - ignora os selectedNumbers recebidos
+quotaIds = await selectRandomQuotas(data.raffleId, data.quantity);
 ```
 
-### 2. Configurar Webhook no InfinitePay
+O parâmetro `selectedNumbers` é recebido mas nunca utilizado.
 
-O InfinitePay precisa ser configurado para enviar notificações para:
+## Solução
+
+Modificar o `processCheckout` para:
+1. **Usar os números já selecionados** quando disponíveis
+2. **Buscar os IDs das cotas** com base nos números selecionados
+3. **Só selecionar novas cotas** se nenhum número foi previamente selecionado
+
+### Fluxo Corrigido
+
 ```
-https://[SEU_PROJETO].supabase.co/functions/v1/infinitepay-webhook
+Usuário seleciona cotas → Números: [85755] 
+        ↓
+Abre checkout com selectedNumbers: ["85755"]
+        ↓
+Checkout busca IDs das cotas por número
+        ↓
+Reserva essas cotas específicas
+        ↓
+Pagamento confirmado
+        ↓
+Painel mostra: 85755 ✓
 ```
-
-Você precisará:
-1. Acessar o painel do InfinitePay
-2. Configurar a URL do webhook nas configurações
-
-### 3. Criar Função para Liberar Cotas Expiradas
-
-**Nova função:** `supabase/functions/release-expired-quotas/index.ts`
-
-Esta função será chamada periodicamente (via cron ou manualmente) para:
-- Buscar transações `pending` que expiraram
-- Atualizar cotas associadas para `available`
-- Marcar transações como `expired`
-
-```typescript
-// Lógica principal:
-// 1. Buscar transações pending onde expires_at < now()
-// 2. Buscar cotas associadas via transaction_quotas
-// 3. Atualizar cotas para status: 'available', user_id: null
-// 4. Atualizar transações para status: 'expired'
-```
-
-### 4. Adicionar Política RLS para UPDATE nas Cotas
-
-**Migração SQL necessária:**
-
-A política atual só permite UPDATE de `available` → `reserved`. Precisamos permitir que o service_role (usado pelo webhook) também possa fazer `reserved` → `sold`.
 
 ## Arquivos a Modificar
 
 | Arquivo | Alteração |
 |---------|-----------|
-| `src/services/checkout.ts` | Adicionar reserva de cotas |
-| `supabase/functions/release-expired-quotas/index.ts` | Nova função para liberar cotas |
-| Migração SQL | Atualizar política RLS |
+| `src/services/checkout.ts` | Usar números selecionados em vez de gerar novos |
 
-## Fluxo Corrigido
+## Mudanças no Código
 
-```
-Cliente seleciona cotas
-        ↓
-   Cotas: available → reserved
-        ↓
-   Redireciona para InfinitePay
-        ↓
-    Pagamento concluído
-        ↓
-   Webhook recebe notificação
-        ↓
-   Cotas: reserved → sold
-        ↓
-   Transação: pending → paid
-```
+### checkout.ts
 
-## Fluxo de Expiração
+1. Criar nova função para buscar IDs por números:
+```typescript
+async function getQuotaIdsByNumbers(raffleId: string, numbers: string[]): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('quotas')
+    .select('id, number')
+    .eq('raffle_id', raffleId)
+    .eq('status', 'available')
+    .in('number', numbers);
 
-```
-   Cotas: reserved (30 min)
-        ↓
-   Pagamento não concluído
-        ↓
-   Função de liberação roda
-        ↓
-   Cotas: reserved → available
-        ↓
-   Transação: pending → expired
+  if (error) throw error;
+  if (!data || data.length !== numbers.length) {
+    throw new Error('Algumas cotas selecionadas não estão mais disponíveis');
+  }
+  
+  return data.map(q => q.id);
+}
 ```
 
-## Observação Importante
+2. No `processCheckout`, usar os números selecionados:
+```typescript
+// Antes (errado)
+quotaIds = await selectRandomQuotas(data.raffleId, data.quantity);
 
-Você precisa configurar o webhook no painel do InfinitePay para que ele notifique seu sistema quando um pagamento for concluído. Sem essa configuração, o sistema nunca saberá que o pagamento foi feito.
+// Depois (correto)
+if (data.selectedNumbers && data.selectedNumbers.length === data.quantity) {
+  quotaIds = await getQuotaIdsByNumbers(data.raffleId, data.selectedNumbers);
+} else {
+  quotaIds = await selectRandomQuotas(data.raffleId, data.quantity);
+}
+```
 
-A URL do webhook é:
-```
-https://pgfrhweuqvstezueqcrf.supabase.co/functions/v1/infinitepay-webhook
-```
+## Resultado Esperado
+
+Após a correção:
+- O número **85755** mostrado na seleção será o **mesmo** número que aparece no painel "Minhas Cotas"
+- Haverá consistência entre a visualização e a compra efetiva
