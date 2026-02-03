@@ -7,44 +7,41 @@ import { HolographicCard } from '@/components/ui/holographic-card';
 import CheckoutModal from '@/components/CheckoutModal';
 import QuotaTicket from '@/components/QuotaTicket';
 import { useRaffleData } from '@/hooks/useRaffleData';
-
 const QUICK_ADD_OPTIONS = [5, 10, 20, 50, 100];
 const MIN_QUOTAS = 1;
 const MAX_QUOTAS = 1000;
-
 const QuotaSelector = () => {
-  const { raffle, stats, isLoading: isLoadingRaffle, selectRandomQuotas } = useRaffleData();
+  const {
+    raffle,
+    stats,
+    isLoading: isLoadingRaffle,
+    selectRandomQuotas
+  } = useRaffleData();
   const [quantity, setQuantity] = useState(10);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectedNumbers, setSelectedNumbers] = useState<string[]>([]);
-
   const pricePerQuota = raffle?.pricePerQuota || 1;
   const totalPrice = quantity * pricePerQuota;
 
   // Limitar quantidade ao disponível
   const maxAvailable = Math.min(stats.available, MAX_QUOTAS);
-
   const handleIncrement = () => {
     setQuantity(prev => Math.min(prev + 1, maxAvailable));
   };
-
   const handleDecrement = () => {
     setQuantity(prev => Math.max(prev - 1, MIN_QUOTAS));
   };
-
   const handleQuickAdd = (amount: number) => {
     setQuantity(prev => Math.min(prev + amount, maxAvailable));
   };
-
   const handleSelectQuotas = async () => {
     setIsSelecting(true);
     setSelectedNumbers([]);
-    
     try {
       const quotas = await selectRandomQuotas(quantity);
       const numbers = quotas.map(q => q.number);
-      
+
       // Animar a adição dos números um a um
       for (let i = 0; i < numbers.length; i++) {
         await new Promise(resolve => setTimeout(resolve, 30));
@@ -63,48 +60,42 @@ const QuotaSelector = () => {
       setSelectedNumbers(prev => prev.slice(0, quantity));
     }
   }, [quantity, selectedNumbers.length]);
-
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
     }).format(value);
   };
-
   const formatNumber = (value: number) => {
     return new Intl.NumberFormat('pt-BR').format(value);
   };
 
   // Calcular porcentagem vendida
-  const soldPercentage = stats.total > 0 
-    ? Math.round(((stats.sold + stats.reserved) / stats.total) * 100) 
-    : 0;
-
+  const soldPercentage = stats.total > 0 ? Math.round((stats.sold + stats.reserved) / stats.total * 100) : 0;
   if (isLoadingRaffle) {
-    return (
-      <section id="cotas" className="min-h-screen py-12 px-4 flex items-center justify-center">
+    return <section id="cotas" className="min-h-screen py-12 px-4 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
           <p className="text-muted-foreground">Carregando...</p>
         </div>
-      </section>
-    );
+      </section>;
   }
-
-  return (
-    <section id="cotas" className="min-h-screen py-12 px-4 relative overflow-hidden">
+  return <section id="cotas" className="min-h-screen py-12 px-4 relative overflow-hidden">
       {/* Subtle overlay effects - main background is global */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl pointer-events-none" />
 
       <div className="relative container mx-auto max-w-md">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center mb-6"
-        >
+        <motion.div initial={{
+        opacity: 0,
+        y: -20
+      }} whileInView={{
+        opacity: 1,
+        y: 0
+      }} viewport={{
+        once: true
+      }} className="text-center mb-6">
           <h2 className="text-3xl md:text-4xl font-display font-bold gradient-text mb-2 tracking-wide">
             Selecione suas Cotas
           </h2>
@@ -115,61 +106,28 @@ const QuotaSelector = () => {
         </motion.div>
 
         {/* Stats Bar */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          className="mb-6"
-        >
-          <div className="p-4 rounded-xl bg-secondary/50 border border-border">
-            <div className="flex items-center gap-2 mb-3">
-              <TrendingUp className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium">Progresso de Vendas</span>
-            </div>
-            
-            {/* Barra de progresso com porcentagem */}
-            <div className="flex items-center gap-3">
-              <div className="flex-1 h-2.5 bg-secondary rounded-full overflow-hidden relative">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${soldPercentage}%` }}
-                  transition={{ duration: 1, ease: 'easeOut' }}
-                  className="h-full bg-gradient-to-r from-primary to-cyan-400 rounded-full relative"
-                >
-                  {/* Shimmer effect */}
-                  <motion.div
-                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
-                    animate={{ x: ['-100%', '200%'] }}
-                    transition={{
-                      duration: 2,
-                      repeat: Infinity,
-                      repeatDelay: 3,
-                      ease: 'easeInOut'
-                    }}
-                  />
-                </motion.div>
-              </div>
-              <motion.span
-                key={soldPercentage}
-                initial={{ scale: 1.2, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                className="text-sm font-bold text-primary min-w-[45px] text-right"
-              >
-                {soldPercentage}%
-              </motion.span>
-            </div>
-            
-          </div>
+        <motion.div initial={{
+        opacity: 0,
+        scale: 0.9
+      }} whileInView={{
+        opacity: 1,
+        scale: 1
+      }} viewport={{
+        once: true
+      }} className="mb-6">
+          
         </motion.div>
 
         {/* Mode Badge */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          className="flex justify-center mb-6"
-        >
+        <motion.div initial={{
+        opacity: 0,
+        scale: 0.9
+      }} whileInView={{
+        opacity: 1,
+        scale: 1
+      }} viewport={{
+        once: true
+      }} className="flex justify-center mb-6">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/30">
             <Shuffle className="w-4 h-4 text-primary" />
             <span className="text-sm font-medium">Seleção aleatória</span>
@@ -177,12 +135,15 @@ const QuotaSelector = () => {
         </motion.div>
 
         {/* Quantity Counter - Premium Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="mb-6"
-        >
+        <motion.div initial={{
+        opacity: 0,
+        y: 20
+      }} whileInView={{
+        opacity: 1,
+        y: 0
+      }} viewport={{
+        once: true
+      }} className="mb-6">
           <div className="relative group">
             {/* Animated glow border */}
             <div className="absolute -inset-[1px] bg-gradient-to-r from-primary via-cyan-400 to-primary rounded-2xl opacity-50 group-hover:opacity-75 blur-sm transition-opacity duration-500" />
@@ -199,19 +160,17 @@ const QuotaSelector = () => {
                 {/* Counter Section */}
                 <div className="flex items-center justify-center gap-4 sm:gap-6">
                   {/* Decrement Button */}
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={handleDecrement}
-                    disabled={quantity <= MIN_QUOTAS}
-                    className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-xl
+                  <motion.button whileHover={{
+                  scale: 1.1
+                }} whileTap={{
+                  scale: 0.9
+                }} onClick={handleDecrement} disabled={quantity <= MIN_QUOTAS} className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-xl
                              bg-gradient-to-br from-secondary to-secondary/50
                              border border-border/50 hover:border-primary/50
                              flex items-center justify-center transition-all duration-300
                              disabled:opacity-40 disabled:cursor-not-allowed
                              hover:shadow-[0_0_20px_hsl(187_100%_50%_/_0.15)]
-                             active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]"
-                  >
+                             active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]">
                     <Minus className="w-5 h-5 sm:w-6 sm:h-6 text-foreground" />
                   </motion.button>
 
@@ -221,43 +180,52 @@ const QuotaSelector = () => {
                     <div className="absolute inset-0 bg-primary/10 blur-2xl rounded-full" />
                     
                     <AnimatePresence mode="popLayout">
-                      <motion.span
-                        key={quantity}
-                        initial={{ opacity: 0, y: -30, scale: 0.5, filter: 'blur(10px)' }}
-                        animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
-                        exit={{ opacity: 0, y: 30, scale: 0.5, filter: 'blur(10px)' }}
-                        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                        className="relative text-5xl sm:text-6xl font-display font-black gradient-text tracking-wider drop-shadow-[0_0_20px_hsl(187_100%_50%_/_0.5)]"
-                      >
+                      <motion.span key={quantity} initial={{
+                      opacity: 0,
+                      y: -30,
+                      scale: 0.5,
+                      filter: 'blur(10px)'
+                    }} animate={{
+                      opacity: 1,
+                      y: 0,
+                      scale: 1,
+                      filter: 'blur(0px)'
+                    }} exit={{
+                      opacity: 0,
+                      y: 30,
+                      scale: 0.5,
+                      filter: 'blur(10px)'
+                    }} transition={{
+                      type: 'spring',
+                      stiffness: 300,
+                      damping: 20
+                    }} className="relative text-5xl sm:text-6xl font-display font-black gradient-text tracking-wider drop-shadow-[0_0_20px_hsl(187_100%_50%_/_0.5)]">
                         {quantity}
                       </motion.span>
                     </AnimatePresence>
                     
-                    <motion.span 
-                      key={quantity === 1 ? 'cota' : 'cotas'}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="text-muted-foreground text-xs sm:text-sm uppercase tracking-[0.2em] mt-1 font-medium"
-                    >
+                    <motion.span key={quantity === 1 ? 'cota' : 'cotas'} initial={{
+                    opacity: 0
+                  }} animate={{
+                    opacity: 1
+                  }} className="text-muted-foreground text-xs sm:text-sm uppercase tracking-[0.2em] mt-1 font-medium">
                       {quantity === 1 ? 'cota' : 'cotas'}
                     </motion.span>
                   </div>
 
                   {/* Increment Button */}
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={handleIncrement}
-                    disabled={quantity >= maxAvailable}
-                    className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-xl
+                  <motion.button whileHover={{
+                  scale: 1.1
+                }} whileTap={{
+                  scale: 0.9
+                }} onClick={handleIncrement} disabled={quantity >= maxAvailable} className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-xl
                              bg-gradient-to-br from-primary to-primary/80
                              border border-primary/50
                              flex items-center justify-center transition-all duration-300
                              disabled:opacity-40 disabled:cursor-not-allowed
                              shadow-[0_0_25px_hsl(187_100%_50%_/_0.4)]
                              hover:shadow-[0_0_35px_hsl(187_100%_50%_/_0.5)]
-                             active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]"
-                  >
+                             active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]">
                     <Plus className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" />
                   </motion.button>
                 </div>
@@ -268,20 +236,13 @@ const QuotaSelector = () => {
                   
                   <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary/30 border border-border/30">
                     <span className="text-xs text-muted-foreground whitespace-nowrap">ou digite:</span>
-                    <input
-                      type="number"
-                      value={quantity}
-                      onChange={(e) => {
-                        const val = parseInt(e.target.value) || MIN_QUOTAS;
-                        setQuantity(Math.min(Math.max(val, MIN_QUOTAS), maxAvailable));
-                      }}
-                      className="w-16 h-7 text-center text-sm bg-secondary/50 border border-border/50 rounded-md 
+                    <input type="number" value={quantity} onChange={e => {
+                    const val = parseInt(e.target.value) || MIN_QUOTAS;
+                    setQuantity(Math.min(Math.max(val, MIN_QUOTAS), maxAvailable));
+                  }} className="w-16 h-7 text-center text-sm bg-secondary/50 border border-border/50 rounded-md 
                                text-foreground font-semibold focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30
                                transition-all duration-200
-                               [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      min={MIN_QUOTAS}
-                      max={maxAvailable}
-                    />
+                               [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" min={MIN_QUOTAS} max={maxAvailable} />
                   </div>
                   
                   <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
@@ -292,80 +253,84 @@ const QuotaSelector = () => {
         </motion.div>
 
         {/* Quick Add Chips */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="flex flex-wrap justify-center gap-2 mb-6"
-        >
-          {QUICK_ADD_OPTIONS.map((amount, index) => (
-            <motion.button
-              key={amount}
-              initial={{ opacity: 0, scale: 0.8 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.05 }}
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => handleQuickAdd(amount)}
-              disabled={quantity + amount > maxAvailable}
-              className="px-4 py-2.5 rounded-xl bg-secondary hover:bg-secondary/80 
+        <motion.div initial={{
+        opacity: 0,
+        y: 20
+      }} whileInView={{
+        opacity: 1,
+        y: 0
+      }} viewport={{
+        once: true
+      }} className="flex flex-wrap justify-center gap-2 mb-6">
+          {QUICK_ADD_OPTIONS.map((amount, index) => <motion.button key={amount} initial={{
+          opacity: 0,
+          scale: 0.8
+        }} whileInView={{
+          opacity: 1,
+          scale: 1
+        }} viewport={{
+          once: true
+        }} transition={{
+          delay: index * 0.05
+        }} whileHover={{
+          scale: 1.05,
+          y: -2
+        }} whileTap={{
+          scale: 0.95
+        }} onClick={() => handleQuickAdd(amount)} disabled={quantity + amount > maxAvailable} className="px-4 py-2.5 rounded-xl bg-secondary hover:bg-secondary/80 
                        border border-border hover:border-primary/50
                        font-medium text-sm transition-all duration-200
                        hover:shadow-[0_0_15px_hsl(187_100%_50%_/_0.2)]
-                       disabled:opacity-50 disabled:cursor-not-allowed"
-            >
+                       disabled:opacity-50 disabled:cursor-not-allowed">
               <span className="text-primary">+</span>{amount}
-            </motion.button>
-          ))}
+            </motion.button>)}
         </motion.div>
 
         {/* Select Random Button */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="mb-6"
-        >
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={handleSelectQuotas}
-            disabled={isSelecting || stats.available === 0}
-            className="w-full py-4 rounded-xl bg-secondary/50 hover:bg-secondary
+        <motion.div initial={{
+        opacity: 0,
+        y: 20
+      }} whileInView={{
+        opacity: 1,
+        y: 0
+      }} viewport={{
+        once: true
+      }} className="mb-6">
+          <motion.button whileHover={{
+          scale: 1.02
+        }} whileTap={{
+          scale: 0.98
+        }} onClick={handleSelectQuotas} disabled={isSelecting || stats.available === 0} className="w-full py-4 rounded-xl bg-secondary/50 hover:bg-secondary
                      border border-border hover:border-primary/50
                      flex items-center justify-center gap-3
                      transition-all duration-300
-                     disabled:opacity-70"
-          >
-            {isSelecting ? (
-              <>
+                     disabled:opacity-70">
+            {isSelecting ? <>
                 <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                 <span className="font-medium">Selecionando números...</span>
-              </>
-            ) : (
-              <>
+              </> : <>
                 <Shuffle className="w-5 h-5 text-primary" />
                 <span className="font-medium">
                   Selecionar <span className="text-primary font-bold">{quantity}</span> cotas aleatórias
                 </span>
-              </>
-            )}
+              </>}
           </motion.button>
         </motion.div>
 
         {/* Selected Numbers Ticket */}
         <AnimatePresence>
-          {selectedNumbers.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mb-6"
-            >
+          {selectedNumbers.length > 0 && <motion.div initial={{
+          opacity: 0,
+          height: 0
+        }} animate={{
+          opacity: 1,
+          height: 'auto'
+        }} exit={{
+          opacity: 0,
+          height: 0
+        }} className="mb-6">
               <QuotaTicket numbers={selectedNumbers} isLoading={isSelecting} />
-            </motion.div>
-          )}
+            </motion.div>}
         </AnimatePresence>
 
         {/* Order Summary */}
@@ -384,14 +349,12 @@ const QuotaSelector = () => {
                 {formatCurrency(pricePerQuota)}
               </span>
               
-              {selectedNumbers.length > 0 && (
-                <>
+              {selectedNumbers.length > 0 && <>
                   <span className="text-muted-foreground text-sm">Números selecionados</span>
                   <span className="font-medium text-sm text-primary text-right tabular-nums">
                     {selectedNumbers.length}
                   </span>
-                </>
-              )}
+                </>}
               
               <div className="col-span-2 h-px bg-gradient-to-r from-transparent via-border to-transparent my-1" />
               
@@ -404,30 +367,29 @@ const QuotaSelector = () => {
         </HolographicCard>
 
         {/* CTA Button */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-        >
-          <SolidButton
-            onClick={() => setIsCheckoutOpen(true)}
-            className="w-full"
-            size="lg"
-            variant="primary"
-            disabled={stats.available === 0}
-          >
+        <motion.div initial={{
+        opacity: 0,
+        y: 20
+      }} whileInView={{
+        opacity: 1,
+        y: 0
+      }} viewport={{
+        once: true
+      }}>
+          <SolidButton onClick={() => setIsCheckoutOpen(true)} className="w-full" size="lg" variant="primary" disabled={stats.available === 0}>
             <ShoppingCart className="w-5 h-5" />
             {selectedNumbers.length > 0 ? 'Comprar estas Cotas' : 'Finalizar Compra'}
           </SolidButton>
         </motion.div>
 
         {/* Trust Indicators */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          className="mt-6 flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground"
-        >
+        <motion.div initial={{
+        opacity: 0
+      }} whileInView={{
+        opacity: 1
+      }} viewport={{
+        once: true
+      }} className="mt-6 flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground">
           <div className="flex items-center gap-1">
             <Check className="w-4 h-4 text-green-500" />
             <span>Pagamento seguro</span>
@@ -444,16 +406,7 @@ const QuotaSelector = () => {
       </div>
 
       {/* Checkout Modal */}
-      <CheckoutModal
-        isOpen={isCheckoutOpen}
-        onClose={() => setIsCheckoutOpen(false)}
-        quantity={quantity}
-        totalPrice={totalPrice}
-        selectedNumbers={selectedNumbers}
-        raffleId={raffle?.id}
-      />
-    </section>
-  );
+      <CheckoutModal isOpen={isCheckoutOpen} onClose={() => setIsCheckoutOpen(false)} quantity={quantity} totalPrice={totalPrice} selectedNumbers={selectedNumbers} raffleId={raffle?.id} />
+    </section>;
 };
-
 export default QuotaSelector;
