@@ -9,7 +9,7 @@ const corsHeaders = {
 const INFINITEPAY_HANDLE = 'samvyt10'
 const INFINITEPAY_API_URL = 'https://api.infinitepay.io/invoices/public/checkout/links'
 const SUPABASE_PROJECT_URL = 'https://krlltvtdfwnaxrdmknhq.supabase.co'
-const SITE_URL = 'https://spectral-scribe-space.lovable.app'
+const SITE_URL = 'https://sitesamvyt.vercel.app'
 
 interface PaymentRequest {
   orderId: string
@@ -82,7 +82,7 @@ serve(async (req) => {
     // Montar payload para InfinitePay
     const payload: InfinitePayPayload = {
       handle: INFINITEPAY_HANDLE,
-      redirect_url: `${SITE_URL}/pagamento-concluido?order_nsu=${body.orderId}`,
+      redirect_url: `${SITE_URL}/login`,
       webhook_url: `${SUPABASE_PROJECT_URL}/functions/v1/infinitepay-webhook`,
       order_nsu: body.orderId,
       customer: {
