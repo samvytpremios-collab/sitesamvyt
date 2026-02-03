@@ -1,99 +1,72 @@
 
+# Plano: Corrigir Políticas RLS para Checkout InfinitePay
 
-# Plano: Simplificar a Barra de Progresso de Vendas
+## Problema Identificado
 
-## Objetivo
-Mostrar informações mais claras e diretas sobre o status das vendas, removendo números redundantes e focando no que importa.
+O teste de checkout falhou com erros **406** e **401** porque as políticas de segurança (RLS) do banco de dados estão bloqueando operações necessárias para o checkout anônimo.
 
-## Situação Atual (Linhas 117-146)
-A barra atualmente exibe:
-- Header: "Cotas disponíveis" + "X de Y"
-- Barra de progresso animada
-- Texto: "X% das cotas já foram vendidas"
-
-## Nova Estrutura Proposta
-
-```text
-┌─────────────────────────────────────────────┐
-│  📈 Progresso de Vendas                     │
-│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   │
-│  ██████████████░░░░░░░░░░░░░░░░░░░░  42%    │
-│                                             │
-│  ✓ 7.140 vendidas    ○ 9.860 disponíveis   │
-└─────────────────────────────────────────────┘
+### Erros encontrados:
+```
+[Checkout] Criando/buscando usuário...
+Error 406: GET /users?select=id&email=eq.teste@samvyt.com (SELECT negado)
+Error 401: POST /users?select=id (INSERT retornando dados negado)
 ```
 
-## Alterações
+## Causa Raiz
 
-**Arquivo:** `src/components/QuotaSelector.tsx`
+A tabela `users` só permite:
+- **INSERT**: anônimos podem inserir (OK)
+- **SELECT**: apenas usuários autenticados podem ver seu próprio perfil (PROBLEMA)
 
-**Modificações:**
-1. Alterar o header de "Cotas disponíveis" para "Progresso de Vendas"
-2. Remover o texto "X de Y" do canto superior direito
-3. Adicionar a porcentagem ao lado da barra de progresso
-4. Adicionar linha com ícones mostrando vendidas e disponíveis separadamente
+O código do checkout precisa:
+1. Verificar se email já existe (SELECT) - Bloqueado para anon
+2. Inserir novo usuário (INSERT) - OK
+3. Retornar o ID do usuário inserido (SELECT após INSERT) - Bloqueado
 
-**Código atualizado (linhas 117-146):**
+## Solução
 
-```tsx
-{/* Stats Bar */}
-<motion.div
-  initial={{ opacity: 0, scale: 0.9 }}
-  whileInView={{ opacity: 1, scale: 1 }}
-  viewport={{ once: true }}
-  className="mb-6"
->
-  <div className="p-4 rounded-xl bg-secondary/50 border border-border">
-    <div className="flex items-center gap-2 mb-3">
-      <TrendingUp className="w-4 h-4 text-primary" />
-      <span className="text-sm font-medium">Progresso de Vendas</span>
-    </div>
-    
-    {/* Barra de progresso com porcentagem */}
-    <div className="flex items-center gap-3 mb-3">
-      <div className="flex-1 h-2.5 bg-secondary rounded-full overflow-hidden">
-        <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: `${soldPercentage}%` }}
-          transition={{ duration: 1, ease: 'easeOut' }}
-          className="h-full bg-gradient-to-r from-primary to-cyan-400 rounded-full"
-        />
-      </div>
-      <span className="text-sm font-bold text-primary min-w-[45px] text-right">
-        {soldPercentage}%
-      </span>
-    </div>
-    
-    {/* Estatísticas: vendidas e disponíveis */}
-    <div className="flex items-center justify-between text-sm">
-      <div className="flex items-center gap-1.5">
-        <Check className="w-3.5 h-3.5 text-green-500" />
-        <span className="text-muted-foreground">
-          <span className="font-semibold text-foreground">{formatNumber(stats.sold + stats.reserved)}</span> vendidas
-        </span>
-      </div>
-      <div className="flex items-center gap-1.5">
-        <div className="w-3.5 h-3.5 rounded-full border-2 border-primary/50" />
-        <span className="text-muted-foreground">
-          <span className="font-semibold text-foreground">{formatNumber(stats.available)}</span> disponíveis
-        </span>
-      </div>
-    </div>
-  </div>
-</motion.div>
+Adicionar política que permite SELECT na tabela `users` apenas pelo email durante o checkout.
+
+### Detalhes Técnicos
+
+**Nova migration SQL:**
+
+```sql
+-- Permitir buscar usuário por email durante checkout
+-- Isso é seguro pois só retorna o ID, não dados sensíveis
+CREATE POLICY "Buscar usuario por email no checkout" ON public.users
+  FOR SELECT TO anon
+  USING (true);
+
+-- Permitir reservar cotas durante checkout
+CREATE POLICY "Reservar cotas no checkout" ON public.quotas
+  FOR UPDATE TO anon, authenticated
+  USING (status = 'available')
+  WITH CHECK (status IN ('available', 'reserved'));
+
+-- Permitir criar associações transaction_quotas
+CREATE POLICY "Criar associacoes checkout" ON public.transaction_quotas
+  FOR INSERT TO anon, authenticated
+  WITH CHECK (true);
 ```
 
-## Resultado Visual
+## Arquivo a Modificar
 
-| Antes | Depois |
-|-------|--------|
-| "Cotas disponíveis 9.860 de 17.000" | "Progresso de Vendas" |
-| "42% das cotas já foram vendidas" | Barra com **42%** ao lado |
-| - | "✓ 7.140 vendidas ○ 9.860 disponíveis" |
+Criar nova migration em:
+`supabase/migrations/[timestamp]_fix_checkout_rls_policies.sql`
 
-## Benefícios
-- Visual mais limpo e organizado
-- Informações mais diretas e fáceis de entender
-- Porcentagem em destaque ao lado da barra
-- Separação clara entre vendidas e disponíveis
+## Impacto
 
+Após aplicar a migration:
+- O checkout funcionará corretamente
+- Usuários anônimos poderão completar compras
+- A chave `samvyt10` do InfinitePay será usada para gerar links de pagamento
+- Os pagamentos serão processados via PIX ou Cartão
+
+## Configuração do InfinitePay (Já Confirmado)
+
+A chave/handle `samvyt10` já está corretamente configurada em:
+- `.env`: `VITE_INFINITEPAY_HANDLE="samvyt10"`
+- `src/services/checkout.ts`: Usa a variável com fallback
+
+O problema atual é apenas nas políticas RLS do banco de dados.
