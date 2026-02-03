@@ -1,95 +1,70 @@
 
-# Plano: Correção do Checkout InfinitePay
+# Correção Final: Conceder Permissões de Tabela (GRANT)
 
-## Diagnóstico Realizado
+## Diagnóstico Conclusivo
 
-Após análise detalhada do fluxo de checkout, identifiquei que:
+Após investigação detalhada, descobri a causa raiz do erro RLS:
 
-1. **Criação de usuários funciona** - 5 usuários foram criados com sucesso no banco
-2. **Nenhuma transação foi criada** - todas as tentativas falharam com erro RLS
-3. **As políticas RLS foram aplicadas** - mas podem não estar em efeito ainda
+**O problema NÃO é a política RLS** (que está correta e PERMISSIVE).
 
-### Problema Identificado
+**O problema são os GRANTs ausentes** - o role `anon` não tem permissão para INSERT na tabela `transactions`.
 
-O erro "new row violates row-level security policy for table transactions" indica que o PostgreSQL está rejeitando o INSERT, mesmo com a política `"Criar transacoes checkout"` configurada corretamente.
-
-**Possíveis causas:**
-- Cache do PostgREST não atualizou após a migração
-- Conflito entre políticas PERMISSIVE/RESTRICTIVE (improvável, mas verificaremos)
-
----
-
-## Solução Proposta
-
-### Etapa 1: Forçar Atualização do Cache RLS
-
-Vou criar uma nova migração que:
-1. Remove TODAS as políticas de INSERT da tabela `transactions`
-2. Recria a política com configuração garantidamente correta
-3. Adiciona um `NOTIFY` para forçar atualização do cache
-
-### Etapa 2: Simplificar o Fluxo de Checkout  
-
-Vou adicionar logs mais detalhados no código para identificar exatamente onde o erro ocorre.
-
-### Etapa 3: Testar com Browser Tool
-
-Após as correções, vou testar o checkout automaticamente para garantir que funciona.
-
----
-
-## Mudanças Técnicas
-
-### 1. Migração SQL
-
+### Evidência:
 ```sql
--- Remover políticas de INSERT existentes
-DROP POLICY IF EXISTS "Criar transacoes" ON public.transactions;
-DROP POLICY IF EXISTS "Criar transacoes checkout" ON public.transactions;
-
--- Recriar política limpa
-CREATE POLICY "Permitir checkout anonimo" ON public.transactions
-  FOR INSERT 
-  TO anon, authenticated
-  WITH CHECK (true);
-
--- Notificar PostgREST para recarregar schema
-NOTIFY pgrst, 'reload schema';
+SELECT grantee, privilege_type 
+FROM information_schema.table_privileges 
+WHERE table_name = 'transactions';
+-- Resultado: VAZIO []
 ```
 
-### 2. Melhoria no código (checkout.ts)
+Para que o PostgreSQL permita uma operação com RLS:
+1. O role precisa ter **GRANT** para a operação na tabela
+2. A **política RLS** precisa permitir a linha específica
 
-- Adicionar log detalhado do erro exato retornado pelo Supabase
-- Verificar se o `user_id` está correto antes de inserir
-- Adicionar fallback para retry em caso de erro
+Temos #2, mas falta #1.
 
-### 3. Adicionar política de UPDATE (opcional)
+---
 
-Para o passo 9 do checkout (salvar `external_payment_id`), precisamos permitir UPDATE:
+## Solução
+
+Criar uma migração SQL que concede os GRANTs necessários para todas as tabelas usadas no checkout.
+
+### SQL a ser executado:
 
 ```sql
-CREATE POLICY "Atualizar transacao apos criacao" ON public.transactions
-  FOR UPDATE 
-  TO anon, authenticated
-  USING (true)
-  WITH CHECK (true);
+-- Conceder permissões para o role 'anon' (usuários não autenticados)
+GRANT SELECT, INSERT ON public.transactions TO anon;
+GRANT SELECT, INSERT ON public.users TO anon;
+GRANT SELECT, UPDATE ON public.quotas TO anon;
+GRANT SELECT, INSERT ON public.transaction_quotas TO anon;
+GRANT SELECT ON public.raffle_configs TO anon;
+
+-- Conceder permissões para o role 'authenticated' (usuários autenticados)
+GRANT SELECT, INSERT, UPDATE ON public.transactions TO authenticated;
+GRANT SELECT, INSERT, UPDATE ON public.users TO authenticated;
+GRANT SELECT, UPDATE ON public.quotas TO authenticated;
+GRANT SELECT, INSERT ON public.transaction_quotas TO authenticated;
+GRANT SELECT ON public.raffle_configs TO authenticated;
+
+-- Garantir que a tabela usa sequência correta (se houver)
+GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO anon;
+GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO authenticated;
+
+-- Forçar atualização do cache do PostgREST
+NOTIFY pgrst, 'reload schema';
 ```
 
 ---
 
 ## Arquivos a Modificar
 
-| Arquivo | Mudança |
-|---------|---------|
-| Nova migração SQL | Recriar políticas RLS |
-| `src/services/checkout.ts` | Melhorar tratamento de erro |
-
----
+| Arquivo | Ação |
+|---------|------|
+| Nova migração SQL | Adicionar GRANTs para todas as tabelas do checkout |
 
 ## Resultado Esperado
 
-Após implementar estas correções:
-1. O checkout criará a transação com sucesso
-2. O link do InfinitePay será gerado corretamente
-3. O usuário será redirecionado para `https://pay.infinitepay.io/@samvyt10?amount=X&description=Y`
-
+Após aplicar esta migração:
+1. O role `anon` terá permissão para INSERT na tabela `transactions`
+2. A política RLS (que já é PERMISSIVE) permitirá a inserção
+3. O checkout funcionará corretamente e redirecionará para o InfinitePay
