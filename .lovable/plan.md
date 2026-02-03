@@ -1,60 +1,41 @@
 
-
-# Adicionar 13.000 Novas Cotas com Números Aleatórios
+# Alterar URL de Redirecionamento do InfinitePay
 
 ## Resumo
 
-Vou adicionar 13.000 novas cotas com números de 5 dígitos aleatórios (como `93692`, `04817`, `58321`) que não se repetem com os 17.000 já existentes.
+Vou alterar a URL de redirecionamento após o pagamento no InfinitePay de:
+- **Antes:** `https://spectral-scribe-space.lovable.app/pagamento-concluido?order_nsu=...`
+- **Depois:** `https://sitesamvyt.vercel.app/login`
 
-## Execução
+## Alteração
 
-### Passo 1: Inserir 13.000 Novas Cotas
+### Arquivo: `supabase/functions/create-payment-link/index.ts`
 
-Executar migração SQL que:
-1. Gera números de 00000 a 99999
-2. Remove os que já existem
-3. Embaralha aleatoriamente
-4. Seleciona 13.000 números únicos
-5. Insere na tabela `quotas`
+Linha 12 - Atualizar SITE_URL:
+```typescript
+// Antes
+const SITE_URL = 'https://spectral-scribe-space.lovable.app'
 
-### Passo 2: Atualizar Configuração da Rifa
+// Depois
+const SITE_URL = 'https://sitesamvyt.vercel.app'
+```
 
-Mudar `total_quotas` de 17.000 para 30.000
+Linha 85 - Atualizar redirect_url:
+```typescript
+// Antes
+redirect_url: `${SITE_URL}/pagamento-concluido?order_nsu=${body.orderId}`,
+
+// Depois
+redirect_url: `${SITE_URL}/login`,
+```
 
 ## Resultado
 
-| Antes | Depois |
-|-------|--------|
-| 17.000 cotas | 30.000 cotas |
-| Números: 5 dígitos | Números: 5 dígitos |
-| Formato: `93692` | Formato: `93692` |
+Após o pagamento ser concluído no InfinitePay, o cliente será redirecionado automaticamente para:
+```
+https://sitesamvyt.vercel.app/login
+```
 
 ## Detalhes Técnicos
 
-A migração SQL usará:
-
-```sql
--- Inserir 13.000 novas cotas com números únicos
-INSERT INTO quotas (raffle_id, number, status)
-SELECT 
-  'bb2215ce-76e1-4307-95e3-4395e32579ed'::uuid,
-  LPAD(n::text, 5, '0'),
-  'available'
-FROM (
-  SELECT n FROM generate_series(0, 99999) AS n
-  WHERE LPAD(n::text, 5, '0') NOT IN (
-    SELECT number FROM quotas 
-    WHERE raffle_id = 'bb2215ce-76e1-4307-95e3-4395e32579ed'
-  )
-  ORDER BY random()
-  LIMIT 13000
-) AS new_numbers;
-
--- Atualizar total_quotas na configuração
-UPDATE raffle_configs 
-SET total_quotas = 30000, updated_at = now()
-WHERE id = 'bb2215ce-76e1-4307-95e3-4395e32579ed';
-```
-
-Após a execução, você terá 30.000 cotas disponíveis para venda.
-
+A Edge Function `create-payment-link` envia o payload para a API do InfinitePay com a `redirect_url` configurada. Quando o cliente finaliza o pagamento (via PIX ou cartão), o InfinitePay redireciona automaticamente para essa URL.
