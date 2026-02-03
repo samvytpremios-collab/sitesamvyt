@@ -1,38 +1,66 @@
 /**
  * Serviço de integração com InfinitePay
- * Usa link de redirecionamento direto para checkout
- * Formato: https://pay.infinitepay.io/@{handle}?amount={amount}&description={description}
+ * Usa Edge Function para chamar a API de checkout
  */
 
-export interface InfinitePayCheckoutParams {
-  handle: string;
+const EDGE_FUNCTION_URL = 'https://krlltvtdfwnaxrdmknhq.supabase.co/functions/v1/create-payment-link';
+
+export interface CreatePaymentLinkParams {
+  orderId: string;
   amount: number; // Valor em reais
+  quantity: number;
   description: string;
-  orderId?: string;
+  customer: {
+    name: string;
+    email: string;
+    phone: string;
+  };
+}
+
+export interface CreatePaymentLinkResult {
+  success: boolean;
+  url?: string;
+  error?: string;
+  details?: string;
 }
 
 /**
- * Gera o link de pagamento do InfinitePay
- * O usuário será redirecionado para a página de pagamento
+ * Cria um link de pagamento via Edge Function + API InfinitePay
  */
-export function generatePaymentLink(params: InfinitePayCheckoutParams): string {
-  const { handle, amount, description, orderId } = params;
-  
-  // Formatar o valor (InfinitePay espera em reais, sem casas decimais extras)
-  const formattedAmount = amount.toFixed(2);
-  
-  // Codificar a descrição para URL
-  const encodedDescription = encodeURIComponent(description);
-  
-  // Construir URL base
-  let url = `https://pay.infinitepay.io/@${handle}?amount=${formattedAmount}&description=${encodedDescription}`;
-  
-  // Adicionar order_id se fornecido (para rastreamento)
-  if (orderId) {
-    url += `&order_id=${encodeURIComponent(orderId)}`;
+export async function createPaymentLink(params: CreatePaymentLinkParams): Promise<CreatePaymentLinkResult> {
+  try {
+    console.log('[InfinitePay] Criando link de pagamento...', params);
+
+    const response = await fetch(EDGE_FUNCTION_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(params),
+    });
+
+    const data = await response.json();
+    console.log('[InfinitePay] Resposta:', data);
+
+    if (!response.ok || !data.url) {
+      return {
+        success: false,
+        error: data.error || 'Erro ao gerar link de pagamento',
+        details: data.details,
+      };
+    }
+
+    return {
+      success: true,
+      url: data.url,
+    };
+  } catch (error) {
+    console.error('[InfinitePay] Erro:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erro de conexão',
+    };
   }
-  
-  return url;
 }
 
 /**

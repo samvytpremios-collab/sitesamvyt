@@ -1,8 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { generatePaymentLink } from './infinitepay';
-
-// Configuração
-const INFINITEPAY_HANDLE = import.meta.env.VITE_INFINITEPAY_HANDLE || 'samvyt10';
+import { createPaymentLink } from './infinitepay';
 
 export interface CustomerData {
   name: string;
@@ -185,20 +182,37 @@ export async function processCheckout(data: CheckoutData): Promise<CheckoutResul
       console.error('[Checkout] Erro ao criar associações:', assocError);
     }
 
-    // 8. Gerar link de pagamento InfinitePay (redirecionamento direto)
+    // 8. Gerar link de pagamento via Edge Function + InfinitePay API
     const description = `${data.quantity}x Cotas - ${raffle.name}`;
-    const paymentLink = generatePaymentLink({
-      handle: INFINITEPAY_HANDLE,
-      amount: totalAmount,
-      description,
+    console.log('[Checkout] Gerando link de pagamento...');
+    
+    const paymentResult = await createPaymentLink({
       orderId: transaction.id,
+      amount: totalAmount,
+      quantity: data.quantity,
+      description,
+      customer: {
+        name: data.customerData.name,
+        email: data.customerData.email,
+        phone: data.customerData.phone,
+      },
     });
-    console.log('[Checkout] Link gerado:', paymentLink);
+
+    if (!paymentResult.success || !paymentResult.url) {
+      console.error('[Checkout] Erro ao gerar link:', paymentResult.error);
+      return { 
+        success: false, 
+        error: paymentResult.error || 'Erro ao gerar link de pagamento',
+        transactionId: transaction.id,
+      };
+    }
+
+    console.log('[Checkout] Link gerado:', paymentResult.url);
 
     // 9. Salvar link na transação
     const { error: updateError } = await supabase
       .from('transactions')
-      .update({ external_payment_id: paymentLink })
+      .update({ external_payment_id: paymentResult.url })
       .eq('id', transaction.id);
     
     if (updateError) {
@@ -210,7 +224,7 @@ export async function processCheckout(data: CheckoutData): Promise<CheckoutResul
     return {
       success: true,
       transactionId: transaction.id,
-      paymentLink,
+      paymentLink: paymentResult.url,
     };
   } catch (error) {
     console.error('[Checkout] Erro geral:', error);
